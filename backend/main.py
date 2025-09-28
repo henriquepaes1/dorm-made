@@ -4,6 +4,12 @@ from typing import List, Optional
 from datetime import datetime
 import os
 from supabase import create_client, Client
+from dotenv import load_dotenv
+from schemas.user import User, UserCreate
+from schemas.recipe import Recipe, RecipeCreate
+from schemas.event import Event, EventCreate
+
+load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(title="Dorm Made - Culinary Social Network", version="1.0.0")
@@ -11,63 +17,8 @@ app = FastAPI(title="Dorm Made - Culinary Social Network", version="1.0.0")
 # Supabase configuration
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client("", "")
+supabase: Client = create_client(url, key)
 
-# Pydantic models
-class UserBase(BaseModel):
-    name: str
-    email: str
-    university: str
-
-class UserCreate(UserBase):
-    pass
-
-class User(UserBase):
-    id: int
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-class RecipeBase(BaseModel):
-    title: str
-    description: str
-    ingredients: List[str]
-    instructions: str
-    prep_time: int  # in minutes
-    difficulty: str  # easy, medium, hard
-
-class RecipeCreate(RecipeBase):
-    user_id: int
-
-class Recipe(RecipeBase):
-    id: int
-    user_id: int
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
-
-class EventBase(BaseModel):
-    title: str
-    description: str
-    max_participants: int
-    event_date: datetime
-    location: str
-
-class EventCreate(EventBase):
-    host_user_id: int
-    recipe_id: int
-
-class Event(EventBase):
-    id: int
-    host_user_id: int
-    recipe_id: int
-    current_participants: int
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
 
 class JoinEventRequest(BaseModel):
     user_id: int
