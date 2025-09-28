@@ -22,9 +22,13 @@ async def create_event(event: EventCreate) -> Event:
     if not host:
         raise HTTPException(status_code=404, detail="Host user not found")
 
-
     try:
+        # Convert string event_date to datetime
+        from datetime import datetime
+        event_date = datetime.fromisoformat(event.event_date.replace('Z', '+00:00'))
+        
         event_data = event.model_dump()
+        event_data["event_date"] = event_date.isoformat()  # Convert to ISO string for database
         event_data["current_participants"] = 0  # Initialize with 0 participants
 
         result = supabase.table("events").insert(event_data).execute()

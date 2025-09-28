@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from typing import Optional
 from database import supabase
-from schemas.user import User, UserCreate, UserLogin, Token
+from schemas.user import User, UserCreate, UserLogin, Token, LoginResponse
 from utils.password import hash_password, verify_password, create_access_token
 
 def get_user(user_id: int) -> Optional[User]:
@@ -41,8 +41,8 @@ def get_user_by_email(email: str) -> Optional[dict]:
         print(f"Error getting user by email: {e}")
         return None
 
-async def authenticate_user(login_data: UserLogin) -> Token:
-    """Authenticate user and return JWT token"""
+async def authenticate_user(login_data: UserLogin) -> LoginResponse:
+    """Authenticate user and return JWT token with user data"""
     user = get_user_by_email(login_data.email)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -51,4 +51,18 @@ async def authenticate_user(login_data: UserLogin) -> Token:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     access_token = create_access_token(data={"userId": user["id"]})
-    return Token(access_token=access_token, token_type="bearer")
+    
+    # Create User object without hashed_password
+    user_obj = User(
+        id=user["id"],
+        name=user["name"],
+        email=user["email"],
+        university=user["university"],
+        created_at=user["created_at"]
+    )
+    
+    return LoginResponse(
+        access_token=access_token, 
+        token_type="bearer",
+        user=user_obj
+    )
