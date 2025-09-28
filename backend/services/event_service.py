@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from typing import List, Optional
-from backend.services.user_service import get_user
+from .user_service import get_user
 from database import supabase
 from schemas.event import Event, EventCreate
 

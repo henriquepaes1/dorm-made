@@ -9,11 +9,11 @@ class EventBase(BaseModel):
     location: str
 
 class EventCreate(EventBase):
-    host_user_id: int
+    host_user_id: str
 
 class Event(EventBase):
-    id: int
-    host_user_id: int
+    id: str
+    host_user_id: str
     current_participants: int
     created_at: datetime
     
