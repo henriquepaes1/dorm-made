@@ -24,7 +24,7 @@ A social network for college students to connect through culinary experiences an
 
 - Docker and Docker Compose installed
 - Git
-
+out mig
 ### Running the Application
 
 1. **Clone the repository**
