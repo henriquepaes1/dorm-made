@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import List, Optional
 
 class EventBase(BaseModel):
     title: str
@@ -11,12 +10,10 @@ class EventBase(BaseModel):
 
 class EventCreate(EventBase):
     host_user_id: int
-    recipe_id: int
 
 class Event(EventBase):
     id: int
     host_user_id: int
-    recipe_id: int
     current_participants: int
     created_at: datetime
     
