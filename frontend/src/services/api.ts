@@ -1,0 +1,130 @@
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Types
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  university: string;
+  created_at: string;
+}
+
+export interface UserCreate {
+  name: string;
+  email: string;
+  university: string;
+}
+
+export interface Recipe {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  ingredients: string[];
+  instructions: string;
+  prep_time: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  created_at: string;
+}
+
+export interface RecipeCreate {
+  user_id: string;
+  title: string;
+  description: string;
+  ingredients: string[];
+  instructions: string;
+  prep_time: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+export interface Event {
+  id: string;
+  host_user_id: string;
+  recipe_id: string;
+  title: string;
+  description: string;
+  max_participants: number;
+  current_participants: number;
+  event_date: string;
+  location: string;
+  created_at: string;
+}
+
+export interface EventCreate {
+  host_user_id: string;
+  recipe_id: string;
+  title: string;
+  description: string;
+  max_participants: number;
+  event_date: string;
+  location: string;
+}
+
+export interface JoinEventRequest {
+  user_id: string;
+  event_id: string;
+}
+
+// Users API
+export const createUser = async (userData: UserCreate): Promise<User> => {
+  const response = await api.post('/users/', userData);
+  return response.data;
+};
+
+export const getUser = async (userId: string): Promise<User> => {
+  const response = await api.get(`/users/${userId}`);
+  return response.data;
+};
+
+export const getUserRecipes = async (userId: string): Promise<Recipe[]> => {
+  const response = await api.get(`/users/${userId}/recipes`);
+  return response.data;
+};
+
+export const getUserEvents = async (userId: string): Promise<Event[]> => {
+  const response = await api.get(`/users/${userId}/events`);
+  return response.data;
+};
+
+// Recipes API
+export const createRecipe = async (recipeData: RecipeCreate): Promise<Recipe> => {
+  const response = await api.post('/recipes/', recipeData);
+  return response.data;
+};
+
+export const getRecipe = async (recipeId: string): Promise<Recipe> => {
+  const response = await api.get(`/recipes/${recipeId}`);
+  return response.data;
+};
+
+// Events API
+export const createEvent = async (eventData: EventCreate): Promise<Event> => {
+  const response = await api.post('/events/', eventData);
+  return response.data;
+};
+
+export const getEvents = async (): Promise<Event[]> => {
+  const response = await api.get('/events/');
+  return response.data;
+};
+
+export const getEvent = async (eventId: string): Promise<Event> => {
+  const response = await api.get(`/events/${eventId}`);
+  return response.data;
+};
+
+export const joinEvent = async (joinData: JoinEventRequest): Promise<{ message: string; event_id: string }> => {
+  const response = await api.post('/events/join/', joinData);
+  return response.data;
+};
+
+export default api;
