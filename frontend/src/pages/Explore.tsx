@@ -128,142 +128,15 @@ export default function Explore() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-24">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Filter className="mr-2 h-5 w-5" />
-                  Filters
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Search */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Search</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input 
-                      placeholder="Search meals..." 
-                      className="pl-10"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Location */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Location</label>
-                  <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Locations</SelectItem>
-                      <SelectItem value="north">North Campus</SelectItem>
-                      <SelectItem value="south">South Campus</SelectItem>
-                      <SelectItem value="east">East Campus</SelectItem>
-                      <SelectItem value="west">West Campus</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Price Range */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Price Range</label>
-                  <Select value={selectedPrice} onValueChange={setSelectedPrice}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Any price" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Any Price</SelectItem>
-                      <SelectItem value="0-15">$0 - $15</SelectItem>
-                      <SelectItem value="15-25">$15 - $25</SelectItem>
-                      <SelectItem value="25+">$25+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Time */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Time</label>
-                  <Select value={selectedTime} onValueChange={setSelectedTime}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Any time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Any Time</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="tomorrow">Tomorrow</SelectItem>
-                      <SelectItem value="weekend">This Weekend</SelectItem>
-                      <SelectItem value="week">This Week</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Dietary Preferences */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Dietary</label>
-                  <div className="space-y-2">
-                    {["Vegetarian", "Vegan", "Gluten-Free", "Halal", "Kosher"].map((diet) => (
-                      <label key={diet} className="flex items-center space-x-2">
-                        <input type="checkbox" className="rounded border-gray-300" />
-                        <span className="text-sm">{diet}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {/* Cuisine Tags */}
-            <div className="mb-6">
-              <div className="flex flex-wrap gap-2">
-                {POPULAR_CUISINES.map((cuisine) => (
-                  <Badge
-                    key={cuisine}
-                    variant={cuisine === selectedCuisine ? "default" : "outline"}
-                    className="cursor-pointer hover:bg-primary/10 transition-colors"
-                    onClick={() => setSelectedCuisine(cuisine)}
-                  >
-                    {cuisine}
-                  </Badge>
-                ))}
-              </div>
+        {/* Events Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {events.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <h3 className="text-lg font-semibold mb-2">No events yet</h3>
+              <p className="text-muted-foreground">Be the first to host a culinary event!</p>
             </div>
-
-            {/* Sort Options */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-              <p className="text-muted-foreground">
-                Showing {filteredEvents.length} events
-              </p>
-              <Select defaultValue="recommended">
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="recommended">Recommended</SelectItem>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="participants">Most Participants</SelectItem>
-                  <SelectItem value="date">Date</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Events Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-              {filteredEvents.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <h3 className="text-lg font-semibold mb-2">No events found</h3>
-                  <p className="text-muted-foreground">Try adjusting your filters or check back later for new events.</p>
-                </div>
-              ) : (
-                filteredEvents.map((event) => (
+          ) : (
+            events.map((event) => (
                   <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                       <div className="text-center">
@@ -301,23 +174,8 @@ export default function Explore() {
                       </Button>
                     </CardContent>
                   </Card>
-                ))
-              )}
-            </div>
-
-            {/* Pagination */}
-            {filteredEvents.length > 0 && (
-              <div className="flex justify-center">
-                <div className="flex space-x-2">
-                  <Button variant="outline" disabled>Previous</Button>
-                  <Button variant="default">1</Button>
-                  <Button variant="outline">2</Button>
-                  <Button variant="outline">3</Button>
-                  <Button variant="outline">Next</Button>
-                </div>
-              </div>
-            )}
-          </div>
+            ))
+          )}
         </div>
       </main>
 

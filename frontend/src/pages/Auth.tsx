@@ -5,16 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, Utensils, Users, Mail } from "lucide-react";
+import { Eye, EyeOff, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createUser } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
-  const [userType, setUserType] = useState<"foodie" | "chef" | "both">("both");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -23,14 +20,8 @@ export default function Auth() {
     password: '',
     university: ''
   });
-  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const cuisinePreferences = [
-    "Italian", "Thai", "Mexican", "Korean", "Japanese", "Indian", 
-    "Chinese", "Mediterranean", "American", "Vietnamese", "Lebanese", "Ethiopian"
-  ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -40,13 +31,6 @@ export default function Auth() {
     }));
   };
 
-  const handleCuisineToggle = (cuisine: string) => {
-    setSelectedCuisines(prev => 
-      prev.includes(cuisine) 
-        ? prev.filter(c => c !== cuisine)
-        : [...prev, cuisine]
-    );
-  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,94 +200,6 @@ export default function Auth() {
                       </div>
                     </div>
 
-                    {/* User Type Selection */}
-                    <div>
-                      <Label className="text-base">I want to...</Label>
-                      <div className="grid grid-cols-1 gap-3 mt-3">
-                        <div 
-                          className={`cursor-pointer border-2 rounded-lg p-3 transition-colors ${
-                            userType === "foodie" ? "border-primary bg-primary/5" : "border-border"
-                          }`}
-                          onClick={() => setUserType("foodie")}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <Users className="h-5 w-5 text-primary" />
-                            <div>
-                              <h4 className="font-medium">Find & Join Meals</h4>
-                              <p className="text-xs text-muted-foreground">I'm a Foodie</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div 
-                          className={`cursor-pointer border-2 rounded-lg p-3 transition-colors ${
-                            userType === "chef" ? "border-primary bg-primary/5" : "border-border"
-                          }`}
-                          onClick={() => setUserType("chef")}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <Utensils className="h-5 w-5 text-primary" />
-                            <div>
-                              <h4 className="font-medium">Host & Cook Meals</h4>
-                              <p className="text-xs text-muted-foreground">I'm a Chef</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div 
-                          className={`cursor-pointer border-2 rounded-lg p-3 transition-colors ${
-                            userType === "both" ? "border-primary bg-primary/5" : "border-border"
-                          }`}
-                          onClick={() => setUserType("both")}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div className="flex space-x-1">
-                              <Users className="h-4 w-4 text-primary" />
-                              <Utensils className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium">Both!</h4>
-                              <p className="text-xs text-muted-foreground">I want to cook and explore</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Cuisine Preferences */}
-                    <div>
-                      <Label className="text-base">Food Preferences (Tastebuds)</Label>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        Select cuisines you enjoy to get personalized recommendations
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {cuisinePreferences.map((cuisine) => (
-                          <Badge 
-                            key={cuisine} 
-                            variant={selectedCuisines.includes(cuisine) ? "default" : "outline"}
-                            className="cursor-pointer hover:bg-primary/10 transition-colors"
-                            onClick={() => handleCuisineToggle(cuisine)}
-                          >
-                            {cuisine}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Terms & Conditions */}
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="terms" required />
-                      <Label htmlFor="terms" className="text-sm">
-                        I agree to the{" "}
-                        <Link to="/terms" className="text-primary hover:underline">
-                          Terms of Service
-                        </Link>{" "}
-                        and{" "}
-                        <Link to="/privacy" className="text-primary hover:underline">
-                          Privacy Policy
-                        </Link>
-                      </Label>
-                    </div>
 
                     <Button 
                       type="submit" 
@@ -361,15 +257,11 @@ export default function Auth() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="remember" />
-                        <Label htmlFor="remember" className="text-sm">Remember me</Label>
-                      </div>
-                      <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                        Forgot password?
-                      </Link>
-                    </div>
+                  <div className="flex items-center justify-end">
+                    <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
 
                     <Button 
                       type="submit" 
