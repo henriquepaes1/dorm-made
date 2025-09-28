@@ -8,16 +8,12 @@ from dotenv import load_dotenv
 from schemas.user import User, UserCreate
 from schemas.recipe import Recipe, RecipeCreate
 from schemas.event import Event, EventCreate
+from database import supabase
 
 load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(title="Dorm Made - Culinary Social Network", version="1.0.0")
-
-# Supabase configuration
-url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
 
 
 class JoinEventRequest(BaseModel):
