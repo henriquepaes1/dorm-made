@@ -5,7 +5,7 @@ from typing import Annotated
 
 security = HTTPBearer()
 
-async def get_current_user_id(credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]) -> int:
+async def get_current_user_id(credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]) -> str:
     """
     Dependency to extract and verify JWT token, returning the user ID.
 
@@ -13,22 +13,25 @@ async def get_current_user_id(credentials: Annotated[HTTPAuthorizationCredential
         credentials: HTTP Bearer token from request headers
 
     Returns:
-        int: User ID from the JWT token
+        str: User ID from the JWT token
 
     Raises:
         HTTPException: If token is invalid or missing
     """
     try:
         user_id = verify_token(credentials.credentials)
-        return int(user_id)
-    except ValueError:
+        print(f"Auth received user_id: {user_id} (type: {type(user_id)})")
+        # Return user_id as string (UUID)
+        return str(user_id)
+    except Exception as e:
+        print(f"Error verifying token: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token format",
+            detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-async def get_current_user(user_id: Annotated[int, Depends(get_current_user_id)]) -> dict:
+async def get_current_user(user_id: Annotated[str, Depends(get_current_user_id)]) -> dict:
     """
     Dependency to verify that the user exists in the database.
 

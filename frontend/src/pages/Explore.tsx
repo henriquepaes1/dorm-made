@@ -1,40 +1,38 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/home/Footer";
-import { MealCard } from "@/components/meals/MealCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Filter, MapPin, Clock, DollarSign, Users } from "lucide-react";
-import { getEvents, joinEvent } from "@/services/api";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MapPin, Clock, Users } from "lucide-react";
+import { getEvents, joinEvent, getMyEvents, getJoinedEvents } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { Event } from "@/services/api";
 
-const POPULAR_CUISINES = [
-  "All", "Thai", "Italian", "Korean", "Mexican", "Japanese", "Indian", "Chinese", "American", "Mediterranean"
-];
-
 export default function Explore() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [myEvents, setMyEvents] = useState<Event[]>([]);
+  const [joinedEvents, setJoinedEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCuisine, setSelectedCuisine] = useState("All");
-  const [selectedLocation, setSelectedLocation] = useState("all");
-  const [selectedPrice, setSelectedPrice] = useState("all");
-  const [selectedTime, setSelectedTime] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
   const { toast } = useToast();
 
   useEffect(() => {
-    loadEvents();
+    loadAllEvents();
   }, []);
 
-  const loadEvents = async () => {
+  const loadAllEvents = async () => {
     try {
       setLoading(true);
-      const eventsData = await getEvents();
-      setEvents(eventsData);
+      const [allEventsData, myEventsData, joinedEventsData] = await Promise.all([
+        getEvents(),
+        getMyEvents(),
+        getJoinedEvents()
+      ]);
+      
+      setAllEvents(allEventsData);
+      setMyEvents(myEventsData);
+      setJoinedEvents(joinedEventsData);
     } catch (error) {
       toast({
         title: "Error",
@@ -70,7 +68,7 @@ export default function Explore() {
       });
       
       // Refresh events to update participant count
-      loadEvents();
+      loadAllEvents();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -80,11 +78,18 @@ export default function Explore() {
     }
   };
 
-  const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+  const getCurrentEvents = () => {
+    switch (activeTab) {
+      case "my":
+        return myEvents;
+      case "joined":
+        return joinedEvents;
+      default:
+        return allEvents;
+    }
+  };
+
+  const currentEvents = getCurrentEvents();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -97,6 +102,48 @@ export default function Explore() {
       minute: '2-digit'
     });
   };
+
+  const renderEventCard = (event: Event) => (
+    <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+      <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-2">🍳</div>
+          <p className="text-sm text-muted-foreground">Culinary Event</p>
+        </div>
+      </div>
+      <CardContent className="p-4">
+        <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+          {event.description}
+        </p>
+        
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Clock className="h-4 w-4 mr-2" />
+            {formatDate(event.event_date)}
+          </div>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-2" />
+            {event.location}
+          </div>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Users className="h-4 w-4 mr-2" />
+            {event.current_participants}/{event.max_participants} participants
+          </div>
+        </div>
+
+        {activeTab === "all" && (
+          <Button 
+            className="w-full"
+            onClick={() => handleJoinEvent(event.id)}
+            disabled={event.current_participants >= event.max_participants}
+          >
+            {event.current_participants >= event.max_participants ? 'Event Full' : 'Join Event'}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   if (loading) {
     return (
@@ -128,55 +175,53 @@ export default function Explore() {
           </p>
         </div>
 
-        {/* Events Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {events.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <h3 className="text-lg font-semibold mb-2">No events yet</h3>
-              <p className="text-muted-foreground">Be the first to host a culinary event!</p>
-            </div>
-          ) : (
-            events.map((event) => (
-                  <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-4xl mb-2">🍳</div>
-                        <p className="text-sm text-muted-foreground">Culinary Event</p>
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {event.description}
-                      </p>
-                      
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4 mr-2" />
-                          {formatDate(event.event_date)}
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4 mr-2" />
-                          {event.location}
-                        </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Users className="h-4 w-4 mr-2" />
-                          {event.current_participants}/{event.max_participants} participants
-                        </div>
-                      </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsTrigger value="all">All Meals</TabsTrigger>
+            <TabsTrigger value="my">My Meals</TabsTrigger>
+            <TabsTrigger value="joined">Joined Meals</TabsTrigger>
+          </TabsList>
 
-                      <Button 
-                        className="w-full"
-                        onClick={() => handleJoinEvent(event.id)}
-                        disabled={event.current_participants >= event.max_participants}
-                      >
-                        {event.current_participants >= event.max_participants ? 'Event Full' : 'Join Event'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-            ))
-          )}
-        </div>
+          <TabsContent value="all">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {allEvents.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <h3 className="text-lg font-semibold mb-2">No events yet</h3>
+                  <p className="text-muted-foreground">Be the first to host a culinary event!</p>
+                </div>
+              ) : (
+                allEvents.map(renderEventCard)
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="my">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {myEvents.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <h3 className="text-lg font-semibold mb-2">No events created yet</h3>
+                  <p className="text-muted-foreground">Create your first culinary event to get started!</p>
+                </div>
+              ) : (
+                myEvents.map(renderEventCard)
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="joined">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {joinedEvents.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <h3 className="text-lg font-semibold mb-2">No joined events yet</h3>
+                  <p className="text-muted-foreground">Join some events to see them here!</p>
+                </div>
+              ) : (
+                joinedEvents.map(renderEventCard)
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
 
       <Footer />

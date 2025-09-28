@@ -112,6 +112,11 @@ export default function CreateEvent() {
       
       navigate('/explore');
     } catch (error: any) {
+      console.error('CreateEvent error:', error);
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      
       toast({
         title: "Error",
         description: error.response?.data?.detail || "Failed to create event",

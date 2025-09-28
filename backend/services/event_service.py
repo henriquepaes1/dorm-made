@@ -3,8 +3,9 @@ from typing import List, Optional
 from .user_service import get_user
 from database import supabase
 from schemas.event import Event, EventCreate
+from schemas.event_participant import EventParticipant, EventParticipantCreate
 
-def get_event(event_id: int) -> Optional[Event]:
+def get_event(event_id: str) -> Optional[Event]:
     """Get event by ID from Supabase"""
     try:
         result = supabase.table("events").select("*").eq("id", event_id).execute()
@@ -15,7 +16,16 @@ def get_event(event_id: int) -> Optional[Event]:
         print(f"Error getting event: {e}")
         return None
 
-async def create_event(event: EventCreate, host_user_id: int) -> Event:
+def is_user_participating(event_id: str, user_id: str) -> bool:
+    """Check if user is already participating in an event"""
+    try:
+        result = supabase.table("events_participants").select("*").eq("event_id", event_id).eq("participant_id", user_id).execute()
+        return len(result.data) > 0
+    except Exception as e:
+        print(f"Error checking participation: {e}")
+        return False
+
+async def create_event(event: EventCreate, host_user_id: str) -> Event:
     """Create a new culinary event"""
     # Verify host user exists
     host = get_user(host_user_id)
@@ -53,15 +63,30 @@ async def join_event(join_request) -> dict:
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    # Check if event is full
-    if event.current_participants >= event.max_participants:
-        raise HTTPException(status_code=400, detail="Event is full")
-
     # Check if user is already the host
     if event.host_user_id == str(user_id):
         raise HTTPException(status_code=400, detail="Host cannot join their own event")
 
+    # Check if user is already participating
+    if is_user_participating(event_id, user_id):
+        raise HTTPException(status_code=400, detail="User is already participating in this event")
+
+    # Check if event is full
+    if event.current_participants >= event.max_participants:
+        raise HTTPException(status_code=400, detail="Event is full")
+
     try:
+        # Add participant to events_participants table
+        participant_data = {
+            "event_id": event_id,
+            "participant_id": user_id
+        }
+        
+        participant_result = supabase.table("events_participants").insert(participant_data).execute()
+        
+        if not participant_result.data:
+            raise HTTPException(status_code=400, detail="Failed to add participant")
+
         # Update event participants count
         result = supabase.table("events").update({
             "current_participants": event.current_participants + 1
@@ -69,7 +94,7 @@ async def join_event(join_request) -> dict:
 
         if result.data:
             return {"message": "Successfully joined the event", "event_id": event_id}
-        raise HTTPException(status_code=400, detail="Failed to join event")
+        raise HTTPException(status_code=400, detail="Failed to update participant count")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error joining event: {str(e)}")
 
@@ -82,14 +107,23 @@ async def list_events() -> List[Event]:
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching events: {str(e)}")
 
-async def get_event_details(event_id: int) -> Event:
+async def get_event_details(event_id: str) -> Event:
     """Get details of a specific event"""
     event = get_event(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     return event
 
-async def get_user_events(user_id: int) -> List[Event]:
+async def get_event_participants(event_id: str) -> List[EventParticipant]:
+    """Get all participants for an event"""
+    try:
+        result = supabase.table("events_participants").select("*").eq("event_id", event_id).execute()
+        participants = [EventParticipant(**participant) for participant in result.data]
+        return participants
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error fetching participants: {str(e)}")
+
+async def get_user_events(user_id: str) -> List[Event]:
     """Get all events created by a specific user"""
     try:
         result = supabase.table("events").select("*").eq("host_user_id", user_id).execute()
@@ -97,3 +131,21 @@ async def get_user_events(user_id: int) -> List[Event]:
         return events
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching user events: {str(e)}")
+
+async def get_user_joined_events(user_id: str) -> List[Event]:
+    """Get all events that a user has joined"""
+    try:
+        # First get all event IDs that the user has joined
+        participants_result = supabase.table("events_participants").select("event_id").eq("participant_id", user_id).execute()
+        
+        if not participants_result.data:
+            return []
+        
+        event_ids = [participant["event_id"] for participant in participants_result.data]
+        
+        # Then get the full event details for those events
+        events_result = supabase.table("events").select("*").in_("id", event_ids).execute()
+        events = [Event(**event) for event in events_result.data]
+        return events
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error fetching joined events: {str(e)}")

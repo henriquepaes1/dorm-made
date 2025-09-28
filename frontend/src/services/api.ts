@@ -130,11 +130,16 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.log('API Error:', error.response?.status, error.response?.data);
+    
     if (error.response?.status === 401) {
+      console.log('401 Error - clearing token and redirecting to login');
       // Token might be invalid, clear it
       removeAuthToken();
-      // Redirect to login if not already there
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+      // Only redirect to login if not already there and not on create-event page
+      if (window.location.pathname !== '/login' && 
+          window.location.pathname !== '/signup' &&
+          window.location.pathname !== '/create-event') {
         window.location.href = '/login';
       }
     }
@@ -197,6 +202,16 @@ export const getEvent = async (eventId: string): Promise<Event> => {
 
 export const joinEvent = async (joinData: JoinEventRequest): Promise<{ message: string; event_id: string }> => {
   const response = await api.post('/events/join/', joinData);
+  return response.data;
+};
+
+export const getMyEvents = async (): Promise<Event[]> => {
+  const response = await api.get('/users/me/events');
+  return response.data;
+};
+
+export const getJoinedEvents = async (): Promise<Event[]> => {
+  const response = await api.get('/users/me/joined-events');
   return response.data;
 };
 

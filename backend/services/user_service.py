@@ -4,7 +4,7 @@ from database import supabase
 from schemas.user import User, UserCreate, UserLogin, Token, LoginResponse
 from utils.password import hash_password, verify_password, create_access_token
 
-def get_user(user_id: int) -> Optional[User]:
+def get_user(user_id: str) -> Optional[User]:
     """Get user by ID from Supabase"""
     try:
         result = supabase.table("users").select("*").eq("id", user_id).execute()
@@ -41,7 +41,7 @@ def get_user_by_email(email: str) -> Optional[dict]:
         print(f"Error getting user by email: {e}")
         return None
 
-def get_user_by_id(user_id: int) -> Optional[dict]:
+def get_user_by_id(user_id: str) -> Optional[dict]:
     """Get user by ID from Supabase - returns raw dict for auth purposes"""
     try:
         result = supabase.table("users").select("*").eq("id", user_id).execute()
@@ -61,6 +61,7 @@ async def authenticate_user(login_data: UserLogin) -> LoginResponse:
     if not verify_password(login_data.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    print(f"Creating token with user ID: {user['id']} (type: {type(user['id'])})")
     access_token = create_access_token(data={"userId": user["id"]})
     
     # Create User object without hashed_password
