@@ -1,25 +1,36 @@
-from fastapi import APIRouter
-from typing import List
+from fastapi import APIRouter, Depends
+from typing import List, Annotated
 from pydantic import BaseModel
 from schemas.event import Event, EventCreate
+from utils.auth import get_current_user_id
 
 router = APIRouter(prefix="/events", tags=["events"])
 
 class JoinEventRequest(BaseModel):
-    user_id: int
     event_id: int
 
 @router.post("/", response_model=Event)
-async def create_event(event: EventCreate):
+async def create_event(
+    event: EventCreate,
+    current_user_id: Annotated[int, Depends(get_current_user_id)]
+):
     """Create a new culinary event"""
     from services.event_service import create_event
-    return await create_event(event)
+    return await create_event(event, current_user_id)
 
 @router.post("/join/")
-async def join_event(join_request: JoinEventRequest):
+async def join_event(
+    join_request: JoinEventRequest,
+    current_user_id: Annotated[int, Depends(get_current_user_id)]
+):
     """Join an existing event"""
     from services.event_service import join_event
-    return await join_event(join_request)
+    # Create the full request with authenticated user ID
+    full_request = {
+        "user_id": current_user_id,
+        "event_id": join_request.event_id
+    }
+    return await join_event(full_request)
 
 @router.get("/", response_model=List[Event])
 async def list_events():

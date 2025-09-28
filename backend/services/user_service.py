@@ -41,6 +41,17 @@ def get_user_by_email(email: str) -> Optional[dict]:
         print(f"Error getting user by email: {e}")
         return None
 
+def get_user_by_id(user_id: int) -> Optional[dict]:
+    """Get user by ID from Supabase - returns raw dict for auth purposes"""
+    try:
+        result = supabase.table("users").select("*").eq("id", user_id).execute()
+        if result.data:
+            return result.data[0]
+        return None
+    except Exception as e:
+        print(f"Error getting user by ID: {e}")
+        return None
+
 async def authenticate_user(login_data: UserLogin) -> Token:
     """Authenticate user and return JWT token"""
     user = get_user_by_email(login_data.email)
