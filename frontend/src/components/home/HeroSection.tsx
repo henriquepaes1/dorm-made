@@ -1,8 +1,29 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Users, Utensils, Heart } from "lucide-react";
+import { Users, Utensils } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { getAuthToken } from "@/services/api";
 
 export function HeroSection() {
+  const navigate = useNavigate();
+
+  const handleFindMeals = () => {
+    const token = getAuthToken();
+    if (token) {
+      navigate('/explore');
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const handleBecomeChef = () => {
+    const token = getAuthToken();
+    if (token) {
+      navigate('/explore');
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
     <section className="relative py-20 bg-gradient-to-br from-background via-accent/20 to-secondary/30">
       <div className="container mx-auto px-4">
@@ -22,30 +43,23 @@ export function HeroSection() {
             </p>
           </div>
 
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-              <Input
-                placeholder="Search by cuisine, location, or chef name..."
-                className="pl-12 pr-4 py-6 text-lg bg-background/80 backdrop-blur border-2 border-border/50 focus:border-primary/50"
-              />
-              <Button 
-                size="lg" 
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-primary to-primary-glow"
-              >
-                Search
-              </Button>
-            </div>
-          </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" className="bg-gradient-to-r from-primary to-primary-glow min-w-[180px]">
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-primary to-primary-glow min-w-[180px]"
+              onClick={handleFindMeals}
+            >
               <Utensils className="mr-2 h-5 w-5" />
               Find Meals
             </Button>
-            <Button size="lg" variant="outline" className="min-w-[180px]">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="min-w-[180px]"
+              onClick={handleBecomeChef}
+            >
               <Users className="mr-2 h-5 w-5" />
               Become a Chef
             </Button>
