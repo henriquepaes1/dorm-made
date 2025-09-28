@@ -9,8 +9,7 @@ class EventBase(BaseModel):
     location: str
 
 class EventCreate(EventBase):
-    host_user_id: str
-    event_date: str  # Accept as string
+    pass
 
 class Event(EventBase):
     id: str

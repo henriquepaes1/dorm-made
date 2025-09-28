@@ -14,8 +14,13 @@ export function Header() {
       const token = getAuthToken();
       
       // Only set user if both user data and token exist
-      if (user && token) {
-        setCurrentUser(JSON.parse(user));
+      if (user && token && user !== 'undefined') {
+        try {
+          setCurrentUser(JSON.parse(user));
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+          setCurrentUser(null);
+        }
       } else {
         setCurrentUser(null);
       }

@@ -15,10 +15,10 @@ def get_event(event_id: int) -> Optional[Event]:
         print(f"Error getting event: {e}")
         return None
 
-async def create_event(event: EventCreate) -> Event:
+async def create_event(event: EventCreate, host_user_id: int) -> Event:
     """Create a new culinary event"""
     # Verify host user exists
-    host = get_user(event.host_user_id)
+    host = get_user(host_user_id)
     if not host:
         raise HTTPException(status_code=404, detail="Host user not found")
 
@@ -28,7 +28,7 @@ async def create_event(event: EventCreate) -> Event:
         event_date = datetime.fromisoformat(event.event_date.replace('Z', '+00:00'))
         
         event_data = event.model_dump()
-        event_data["event_date"] = event_date.isoformat()  # Convert to ISO string for database
+        event_data["host_user_id"] = str(host_user_id)  # Add the authenticated user as host
         event_data["current_participants"] = 0  # Initialize with 0 participants
 
         result = supabase.table("events").insert(event_data).execute()
@@ -40,13 +40,16 @@ async def create_event(event: EventCreate) -> Event:
 
 async def join_event(join_request) -> dict:
     """Join an existing event"""
+    user_id = join_request["user_id"] if isinstance(join_request, dict) else join_request.user_id
+    event_id = join_request["event_id"] if isinstance(join_request, dict) else join_request.event_id
+
     # Verify user exists
-    user = get_user(join_request.user_id)
+    user = get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     # Verify event exists
-    event = get_event(join_request.event_id)
+    event = get_event(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
@@ -55,17 +58,17 @@ async def join_event(join_request) -> dict:
         raise HTTPException(status_code=400, detail="Event is full")
 
     # Check if user is already the host
-    if event.host_user_id == join_request.user_id:
+    if event.host_user_id == str(user_id):
         raise HTTPException(status_code=400, detail="Host cannot join their own event")
 
     try:
         # Update event participants count
         result = supabase.table("events").update({
             "current_participants": event.current_participants + 1
-        }).eq("id", join_request.event_id).execute()
+        }).eq("id", event_id).execute()
 
         if result.data:
-            return {"message": "Successfully joined the event", "event_id": join_request.event_id}
+            return {"message": "Successfully joined the event", "event_id": event_id}
         raise HTTPException(status_code=400, detail="Failed to join event")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error joining event: {str(e)}")

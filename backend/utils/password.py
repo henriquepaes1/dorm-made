@@ -4,6 +4,9 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 import os
 import re
+from dotenv import load_dotenv
+load_dotenv()
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
