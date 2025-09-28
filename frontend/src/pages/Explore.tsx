@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Filter, MapPin, Clock, DollarSign } from "lucide-react";
+import { Search, Filter, MapPin, Clock, DollarSign, Users } from "lucide-react";
 import { getEvents, joinEvent } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { Event } from "@/services/api";

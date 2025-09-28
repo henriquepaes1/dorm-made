@@ -6,10 +6,10 @@ import { Link } from "react-router-dom";
 export function Footer() {
   return (
     <footer className="bg-card border-t">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Brand */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">DM</span>
@@ -33,7 +33,7 @@ export function Footer() {
           </div>
 
           {/* For Foodies */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h3 className="font-semibold text-lg">For Foodies</h3>
             <div className="space-y-2">
               <Link to="/explore" className="block text-muted-foreground hover:text-foreground transition-colors">
@@ -52,7 +52,7 @@ export function Footer() {
           </div>
 
           {/* For Chefs */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h3 className="font-semibold text-lg">For Chefs</h3>
             <div className="space-y-2">
               <Link to="/host" className="block text-muted-foreground hover:text-foreground transition-colors">
@@ -71,7 +71,7 @@ export function Footer() {
           </div>
 
           {/* Contact & Newsletter */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h3 className="font-semibold text-lg">Stay Connected</h3>
             <div className="space-y-3 text-sm text-muted-foreground">
               <div className="flex items-center space-x-2">
@@ -97,7 +97,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t mt-8 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+        <div className="border-t mt-6 pt-6 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <p className="text-sm text-muted-foreground">
             © 2024 Dorm Made. All rights reserved.
           </p>

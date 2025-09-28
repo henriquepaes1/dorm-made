@@ -3,19 +3,43 @@ import { Input } from "@/components/ui/input";
 import { Search, User, Heart, Calendar, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { removeAuthToken, getAuthToken } from "@/services/api";
 
 export function Header() {
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    const user = localStorage.getItem('currentUser');
-    if (user) {
-      setCurrentUser(JSON.parse(user));
-    }
+    const checkAuth = () => {
+      const user = localStorage.getItem('currentUser');
+      const token = getAuthToken();
+      
+      // Only set user if both user data and token exist
+      if (user && token) {
+        setCurrentUser(JSON.parse(user));
+      } else {
+        setCurrentUser(null);
+      }
+    };
+
+    // Check auth on mount
+    checkAuth();
+
+    // Listen for storage changes (when user logs in from another tab)
+    window.addEventListener('storage', checkAuth);
+    
+    // Listen for custom login event
+    window.addEventListener('userLogin', checkAuth);
+
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+      window.removeEventListener('userLogin', checkAuth);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('userEmail');
+    removeAuthToken();
     setCurrentUser(null);
     window.location.href = '/';
   };

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { createUser } from "@/services/api";
+import { createUser, loginUser, setAuthToken } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {
@@ -50,24 +50,40 @@ export default function Auth() {
       const userData = {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
-        university: formData.university
+        university: formData.university,
+        password: formData.password
       };
 
       const user = await createUser(userData);
       
       // Store user in localStorage
       localStorage.setItem('currentUser', JSON.stringify(user));
+      localStorage.setItem('userEmail', user.email);
+      
+      // Dispatch custom event to notify Header of login
+      window.dispatchEvent(new CustomEvent('userLogin'));
       
       toast({
         title: "Success!",
         description: "Account created successfully. Welcome to Dorm Made!",
       });
       
-      navigate('/');
+      navigate('/explore');
     } catch (error: any) {
+      let errorMessage = "Failed to create account";
+      
+      if (error.response?.data?.detail) {
+        // Handle Pydantic validation errors
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map((err: any) => err.msg).join(", ");
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: error.response?.data?.detail || "Failed to create account",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -77,11 +93,62 @@ export default function Auth() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, just show a message since we don't have login endpoint
-    toast({
-      title: "Login",
-      description: "Login functionality will be added soon. Please sign up for now.",
-    });
+    
+    if (!formData.email || !formData.password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const loginData = {
+        email: formData.email,
+        password: formData.password
+      };
+
+      const loginResponse = await loginUser(loginData);
+      
+      // Store the JWT token
+      setAuthToken(loginResponse.access_token);
+      
+      // Store the real user data from the backend
+      localStorage.setItem('currentUser', JSON.stringify(loginResponse.user));
+      localStorage.setItem('userEmail', loginResponse.user.email);
+      
+      // Dispatch custom event to notify Header of login
+      window.dispatchEvent(new CustomEvent('userLogin'));
+      
+      toast({
+        title: "Success!",
+        description: "Logged in successfully. Welcome back!",
+      });
+      
+      navigate('/explore');
+    } catch (error: any) {
+      let errorMessage = "Failed to log in";
+      
+      if (error.response?.data?.detail) {
+        // Handle Pydantic validation errors
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map((err: any) => err.msg).join(", ");
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -228,8 +295,12 @@ export default function Auth() {
                       <Label htmlFor="loginEmail">Email</Label>
                       <Input 
                         id="loginEmail" 
+                        name="email"
                         type="email" 
+                        value={formData.email}
+                        onChange={handleInputChange}
                         placeholder="your.email@university.edu" 
+                        required
                       />
                     </div>
                     
@@ -238,8 +309,12 @@ export default function Auth() {
                       <div className="relative">
                         <Input 
                           id="loginPassword"
+                          name="password"
                           type={showPassword ? "text" : "password"}
+                          value={formData.password}
+                          onChange={handleInputChange}
                           placeholder="Enter your password"
+                          required
                         />
                         <Button
                           type="button"

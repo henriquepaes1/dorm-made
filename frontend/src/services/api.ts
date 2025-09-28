@@ -22,6 +22,23 @@ export interface UserCreate {
   name: string;
   email: string;
   university: string;
+  password: string;
+}
+
+export interface UserLogin {
+  email: string;
+  password: string;
+}
+
+export interface Token {
+  access_token: string;
+  token_type: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
 }
 
 export interface Recipe {
@@ -74,9 +91,35 @@ export interface JoinEventRequest {
   event_id: string;
 }
 
+// Token management
+export const setAuthToken = (token: string) => {
+  localStorage.setItem('authToken', token);
+  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+};
+
+export const getAuthToken = (): string | null => {
+  return localStorage.getItem('authToken');
+};
+
+export const removeAuthToken = () => {
+  localStorage.removeItem('authToken');
+  delete api.defaults.headers.common['Authorization'];
+};
+
+// Initialize token if it exists
+const token = getAuthToken();
+if (token) {
+  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+
 // Users API
 export const createUser = async (userData: UserCreate): Promise<User> => {
   const response = await api.post('/users/', userData);
+  return response.data;
+};
+
+export const loginUser = async (loginData: UserLogin): Promise<LoginResponse> => {
+  const response = await api.post('/users/login', loginData);
   return response.data;
 };
 
