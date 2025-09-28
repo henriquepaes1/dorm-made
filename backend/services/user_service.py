@@ -1,7 +1,8 @@
 from fastapi import HTTPException
 from typing import Optional
 from database import supabase
-from schemas.user import User, UserCreate
+from schemas.user import User, UserCreate, UserLogin, Token
+from utils.password import hash_password, verify_password, create_access_token
 
 def get_user(user_id: int) -> Optional[User]:
     """Get user by ID from Supabase"""
@@ -11,15 +12,43 @@ def get_user(user_id: int) -> Optional[User]:
             return User(**result.data[0])
         return None
     except Exception as e:
+        
         print(f"Error getting user: {e}")
         return None
 
 async def create_user(user: UserCreate) -> User:
     """Create a new user"""
     try:
-        result = supabase.table("users").insert(user.model_dump()).execute()
+        user_data = user.model_dump()
+        hashed_password = hash_password(user_data.pop("password"))
+        user_data["hashed_password"] = hashed_password
+
+        result = supabase.table("users").insert(user_data).execute()
         if result.data:
             return User(**result.data[0])
         raise HTTPException(status_code=400, detail="Failed to create user")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error creating user: {str(e)}")
+
+def get_user_by_email(email: str) -> Optional[dict]:
+    """Get user by email from Supabase including hashed_password"""
+    try:
+        result = supabase.table("users").select("*").eq("email", email).execute()
+        if result.data:
+            return result.data[0]
+        return None
+    except Exception as e:
+        print(f"Error getting user by email: {e}")
+        return None
+
+async def authenticate_user(login_data: UserLogin) -> Token:
+    """Authenticate user and return JWT token"""
+    user = get_user_by_email(login_data.email)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if not verify_password(login_data.password, user["hashed_password"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    access_token = create_access_token(data={"userId": user["id"]})
+    return Token(access_token=access_token, token_type="bearer")
