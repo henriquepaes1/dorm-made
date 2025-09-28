@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Mail } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { createUser, loginUser, setAuthToken } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,6 +22,10 @@ export default function Auth() {
   });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine which tab to show based on the current route
+  const defaultTab = location.pathname === '/login' ? 'login' : 'signup';
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -56,19 +60,13 @@ export default function Auth() {
 
       const user = await createUser(userData);
       
-      // Store user in localStorage
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      localStorage.setItem('userEmail', user.email);
-      
-      // Dispatch custom event to notify Header of login
-      window.dispatchEvent(new CustomEvent('userLogin'));
-      
       toast({
         title: "Success!",
-        description: "Account created successfully. Welcome to Dorm Made!",
+        description: "Account created successfully! Please log in to continue.",
+        className: "bg-green-500 text-white border-green-600",
       });
       
-      navigate('/explore');
+      navigate('/login');
     } catch (error: any) {
       let errorMessage = "Failed to create account";
       
@@ -126,6 +124,7 @@ export default function Auth() {
       toast({
         title: "Success!",
         description: "Logged in successfully. Welcome back!",
+        className: "bg-green-500 text-white border-green-600",
       });
       
       navigate('/explore');
@@ -164,7 +163,7 @@ export default function Auth() {
             </p>
           </div>
 
-          <Tabs defaultValue="signup" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
               <TabsTrigger value="login">Log In</TabsTrigger>

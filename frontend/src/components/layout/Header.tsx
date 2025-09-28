@@ -13,15 +13,21 @@ export function Header() {
       const user = localStorage.getItem('currentUser');
       const token = getAuthToken();
       
+      console.log('Header checkAuth - user:', user ? 'present' : 'null');
+      console.log('Header checkAuth - token:', token ? 'present' : 'null');
+      
       // Only set user if both user data and token exist
       if (user && token && user !== 'undefined') {
         try {
-          setCurrentUser(JSON.parse(user));
+          const parsedUser = JSON.parse(user);
+          console.log('Header checkAuth - parsed user:', parsedUser);
+          setCurrentUser(parsedUser);
         } catch (error) {
           console.error('Error parsing user data:', error);
           setCurrentUser(null);
         }
       } else {
+        console.log('Header checkAuth - setting user to null');
         setCurrentUser(null);
       }
     };

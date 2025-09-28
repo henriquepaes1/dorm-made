@@ -77,8 +77,6 @@ export interface Event {
 }
 
 export interface EventCreate {
-  host_user_id: string;
-  recipe_id: string;
   title: string;
   description: string;
   max_participants: number;
@@ -111,6 +109,38 @@ const token = getAuthToken();
 if (token) {
   api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
+
+// Add request interceptor to ensure token is always included
+api.interceptors.request.use(
+  (config) => {
+    const token = getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle auth errors
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token might be invalid, clear it
+      removeAuthToken();
+      // Redirect to login if not already there
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Users API
 export const createUser = async (userData: UserCreate): Promise<User> => {
