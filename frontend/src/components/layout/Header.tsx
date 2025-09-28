@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, User, Heart, Calendar, Plus } from "lucide-react";
+import { Search, User, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { removeAuthToken, getAuthToken } from "@/services/api";
@@ -95,18 +95,6 @@ export function Header() {
             </Button>
           )}
 
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/favorites">
-              <Heart className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Favorites</span>
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/calendar">
-              <Calendar className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Calendar</span>
-            </Link>
-          </Button>
           
           {currentUser ? (
             <div className="flex items-center space-x-2">
