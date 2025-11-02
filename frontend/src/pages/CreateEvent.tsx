@@ -17,7 +17,8 @@ export default function CreateEvent() {
     description: '',
     max_participants: '',
     event_date: '',
-    location: ''
+    location: '',
+    price: ''
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -136,6 +137,11 @@ export default function CreateEvent() {
       formDataToSend.append('max_participants', formData.max_participants);
       formDataToSend.append('event_date', formData.event_date);
       formDataToSend.append('location', formData.location);
+      
+      // Add price if provided
+      if (formData.price && formData.price.trim() !== '') {
+        formDataToSend.append('price', formData.price);
+      }
 
       // Add image if selected
       if (selectedImage) {
@@ -253,6 +259,24 @@ export default function CreateEvent() {
                       onChange={handleInputChange}
                       required
                     />
+                  </div>
+
+                  {/* Price */}
+                  <div>
+                    <Label htmlFor="price">Price (US$)</Label>
+                    <Input
+                      id="price"
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      placeholder="0.00"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Optional - Set the price per participant
+                    </p>
                   </div>
 
                   {/* Location */}

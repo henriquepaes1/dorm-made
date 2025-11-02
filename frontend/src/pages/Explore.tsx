@@ -185,6 +185,16 @@ export default function Explore() {
             <p className="text-sm text-muted-foreground">Culinary Event</p>
           </div>
         )}
+        {/* Price Badge - Top Right */}
+        {event.price !== undefined && event.price !== null && (
+          <div className="absolute top-3 right-3">
+            <div className="bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-md">
+              <span className="text-lg font-bold text-primary">
+                ${event.price.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
       <CardContent className="p-4">
         <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
