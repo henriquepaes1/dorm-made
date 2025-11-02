@@ -29,16 +29,28 @@ export default function Profile() {
     
     try {
       setLoading(true);
+      console.log("Loading user with ID:", userId);
       const userData = await getUser(userId);
+      console.log("User data loaded:", userData);
       setUser(userData);
     } catch (error: any) {
       console.error("Error loading user:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      console.error("Error config:", error.config);
+      
+      const errorMessage = error.response?.data?.detail 
+        || error.message 
+        || "Não foi possível carregar o perfil do usuário";
+      
       toast({
         title: "Erro",
-        description: "Não foi possível carregar o perfil do usuário",
+        description: errorMessage,
         variant: "destructive"
       });
-      navigate("/");
+      
+      // Não redirecionar imediatamente, deixar o usuário ver a mensagem de erro
+      // navigate("/");
     } finally {
       setLoading(false);
     }
