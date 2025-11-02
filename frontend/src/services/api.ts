@@ -123,6 +123,12 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Don't override Content-Type if FormData (let browser set it automatically with boundary)
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
     return config;
   },
   (error) => {
@@ -187,6 +193,42 @@ export const updateUser = async (userId: string, userUpdate: UserUpdate): Promis
   return response.data;
 };
 
+export const uploadProfilePicture = async (userId: string, file: File): Promise<User> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  
+  const url = `/users/${userId}/profile-picture`;
+  const fullUrl = `${api.defaults.baseURL}${url}`;
+  
+  console.log('[DEBUG] Upload Profile Picture:', {
+    userId,
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+    url,
+    fullUrl,
+    baseURL: api.defaults.baseURL,
+    hasToken: !!getAuthToken()
+  });
+  
+  // Don't set Content-Type manually - axios/browser will set it automatically with boundary
+  try {
+    const response = await api.post(url, formData);
+    console.log('[DEBUG] Upload successful:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('[DEBUG] Upload error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      requestURL: error.config?.url,
+      requestMethod: error.config?.method,
+      headers: error.config?.headers
+    });
+    throw error;
+  }
+};
+
 export const getUserRecipes = async (userId: string): Promise<Recipe[]> => {
   const response = await api.get(`/users/${userId}/recipes`);
   return response.data;
@@ -210,14 +252,8 @@ export const getRecipe = async (recipeId: string): Promise<Recipe> => {
 
 // Events API
 export const createEvent = async (eventData: EventCreate | FormData): Promise<Event> => {
-  // If eventData is FormData, we need to send it with multipart/form-data content type
-  const config = eventData instanceof FormData ? {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  } : {};
-
-  const response = await api.post('/events/', eventData, config);
+  // When sending FormData, don't set Content-Type manually - axios will set it with boundary
+  const response = await api.post('/events/', eventData);
   return response.data;
 };
 
@@ -243,6 +279,13 @@ export const getMyEvents = async (): Promise<Event[]> => {
 
 export const getJoinedEvents = async (): Promise<Event[]> => {
   const response = await api.get('/users/me/joined-events');
+  return response.data;
+};
+
+export const searchUsers = async (query: string, limit: number = 10): Promise<User[]> => {
+  const response = await api.get('/users/search', {
+    params: { query, limit }
+  });
   return response.data;
 };
 
