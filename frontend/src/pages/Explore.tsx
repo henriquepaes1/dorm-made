@@ -19,9 +19,23 @@ export default function Explore() {
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get("search");
+
+  useEffect(() => {
+    // Carregar dados do usuário atual do localStorage
+    const userStr = localStorage.getItem('currentUser');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setCurrentUser(user);
+      } catch (e) {
+        console.error('Error parsing currentUser:', e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     loadAllEvents();
@@ -229,15 +243,25 @@ export default function Explore() {
       
       <main className="container mx-auto px-4 py-8">
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">Explore Meals</h1>
-          <p className="text-lg text-muted-foreground">
-            Discover amazing cultural dining experiences near your campus
-          </p>
-          {searchQuery && (
-            <p className="text-sm text-muted-foreground mt-2">
-              Resultados da busca para: <span className="font-semibold">{searchQuery}</span>
+        <div className="mb-8 flex items-start justify-between">
+          <div className="flex-1">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">Explore Meals</h1>
+            <p className="text-lg text-muted-foreground">
+              Discover amazing cultural dining experiences near your campus
             </p>
+            {searchQuery && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Resultados da busca para: <span className="font-semibold">{searchQuery}</span>
+              </p>
+            )}
+          </div>
+          {currentUser && (
+            <Button variant="outline" size="sm" asChild className="ml-4">
+              <Link to={`/profile/${currentUser.id}`}>
+                <UserIcon className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Profile</span>
+              </Link>
+            </Button>
           )}
         </div>
 

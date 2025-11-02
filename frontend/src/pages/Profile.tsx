@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/home/Footer";
@@ -9,10 +9,10 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getUser, updateUser } from "@/services/api";
+import { getUser, updateUser, uploadProfilePicture } from "@/services/api";
 import { User } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, User as UserIcon, ArrowLeft, UtensilsCrossed, Edit2, Save, X } from "lucide-react";
+import { GraduationCap, User as UserIcon, ArrowLeft, UtensilsCrossed, Edit2, Save, X, Upload, Image as ImageIcon } from "lucide-react";
 
 export default function Profile() {
   const { userId } = useParams<{ userId: string }>();
@@ -21,6 +21,8 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -130,6 +132,73 @@ export default function Profile() {
     setIsEditing(false);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Erro",
+        description: "Apenas arquivos JPEG e PNG são permitidos",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast({
+        title: "Erro",
+        description: "O arquivo excede o limite de 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    handleUploadPhoto(file);
+  };
+
+  const handleUploadPhoto = async (file: File) => {
+    if (!userId && !user) return;
+
+    const targetUserId = userId || user?.id;
+    if (!targetUserId) return;
+
+    try {
+      setUploadingPhoto(true);
+      const updatedUser = await uploadProfilePicture(targetUserId, file);
+      
+      setUser(updatedUser);
+      setEditingUser({ ...updatedUser });
+      
+      // Atualizar localStorage
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      
+      toast({
+        title: "Sucesso!",
+        description: "Foto de perfil atualizada com sucesso",
+        className: "bg-green-500 text-white border-green-600",
+      });
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error: any) {
+      console.error("Error uploading photo:", error);
+      toast({
+        title: "Erro",
+        description: error.response?.data?.detail || "Não foi possível fazer upload da foto",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -197,17 +266,42 @@ export default function Profile() {
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                 {/* Profile Picture */}
-                <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-lg">
-                  {editingUser?.profile_picture ? (
-                    <AvatarImage 
-                      src={editingUser.profile_picture} 
-                      alt={user.name}
-                    />
-                  ) : null}
-                  <AvatarFallback className="text-3xl md:text-4xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
-                    {getInitials(user.name)}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-lg">
+                    {editingUser?.profile_picture ? (
+                      <AvatarImage 
+                        src={editingUser.profile_picture} 
+                        alt={user.name}
+                      />
+                    ) : null}
+                    <AvatarFallback className="text-3xl md:text-4xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png"
+                    onChange={handleFileSelect}
+                    ref={fileInputRef}
+                    className="hidden"
+                    id="profile-photo-upload"
+                    disabled={uploadingPhoto}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="absolute bottom-0 right-0 rounded-full w-10 h-10 p-0 border-2 border-background shadow-lg"
+                  >
+                    {uploadingPhoto ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
 
                 {/* User Info */}
                 <div className="flex-1 w-full">
@@ -215,37 +309,49 @@ export default function Profile() {
                     <h1 className="text-3xl md:text-4xl font-bold">
                       {user.name}
                     </h1>
-                    {!isEditing ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsEditing(true)}
-                        className="ml-4"
-                      >
-                        <Edit2 className="h-4 w-4 mr-2" />
-                        Editar
-                      </Button>
-                    ) : (
-                      <div className="flex gap-2 ml-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCancel}
-                          disabled={saving}
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Cancelar
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleSave}
-                          disabled={saving}
-                        >
-                          <Save className="h-4 w-4 mr-2" />
-                          {saving ? "Salvando..." : "Salvar"}
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex gap-2 ml-4">
+                      {!isEditing ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingPhoto}
+                          >
+                            <ImageIcon className="h-4 w-4 mr-2" />
+                            {uploadingPhoto ? "Enviando..." : "Upload Photo"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsEditing(true)}
+                          >
+                            <Edit2 className="h-4 w-4 mr-2" />
+                            Editar
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCancel}
+                            disabled={saving}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Cancelar
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={handleSave}
+                            disabled={saving}
+                          >
+                            <Save className="h-4 w-4 mr-2" />
+                            {saving ? "Salvando..." : "Salvar"}
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                   
                   {isEditing ? (

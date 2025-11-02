@@ -187,6 +187,18 @@ export const updateUser = async (userId: string, userUpdate: UserUpdate): Promis
   return response.data;
 };
 
+export const uploadProfilePicture = async (userId: string, file: File): Promise<User> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  
+  const response = await api.post(`/users/${userId}/profile-picture`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
 export const getUserRecipes = async (userId: string): Promise<Recipe[]> => {
   const response = await api.get(`/users/${userId}/recipes`);
   return response.data;

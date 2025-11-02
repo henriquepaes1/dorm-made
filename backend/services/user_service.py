@@ -1,8 +1,10 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from typing import Optional, List
 from database import supabase
 from schemas.user import User, UserCreate, UserLogin, UserUpdate, Token, LoginResponse
 from utils.password import hash_password, verify_password, create_access_token
+import uuid
+from datetime import datetime
 
 async def get_user(user_id: str) -> Optional[User]:
     """Get user by ID from Supabase"""
@@ -152,3 +154,66 @@ async def search_users(query: str, limit: int = 10) -> List[User]:
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Error searching users: {str(e)}")
+
+async def upload_profile_picture(user_id: str, image: UploadFile) -> User:
+    """Upload a profile picture to Supabase Storage and update user profile"""
+    try:
+        # Validate file type (only JPEG and PNG)
+        allowed_types = ["image/jpeg", "image/jpg", "image/png"]
+        if image.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400, 
+                detail="Tipo de arquivo inválido. Apenas imagens JPEG e PNG são permitidas."
+            )
+
+        # Validate file size (5MB max)
+        contents = await image.read()
+        if len(contents) > 5 * 1024 * 1024:  # 5MB in bytes
+            raise HTTPException(
+                status_code=400, 
+                detail="Tamanho do arquivo excede o limite de 5MB."
+            )
+
+        # Get current user to check for existing profile picture
+        current_user = await get_user(user_id)
+        if not current_user:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+        # Delete old profile picture if it exists
+        old_picture_url = current_user.profile_picture
+        if old_picture_url:
+            try:
+                # Extract filename from URL
+                # URL format: https://project.supabase.co/storage/v1/object/public/profile-pictures/filename
+                if "profile-pictures/" in old_picture_url:
+                    old_filename = old_picture_url.split("profile-pictures/")[-1].split("?")[0]
+                    supabase.storage.from_("profile-pictures").remove([old_filename])
+            except Exception as e:
+                print(f"Error deleting old profile picture: {e}")
+                # Continue with upload even if deletion fails
+
+        # Generate unique filename
+        file_extension = image.filename.split('.')[-1] if image.filename else 'jpg'
+        unique_filename = f"{user_id}_{uuid.uuid4()}_{int(datetime.now().timestamp())}.{file_extension}"
+
+        # Upload to Supabase Storage
+        result = supabase.storage.from_("profile-pictures").upload(
+            unique_filename,
+            contents,
+            {"content-type": image.content_type}
+        )
+
+        # Get public URL
+        public_url = supabase.storage.from_("profile-pictures").get_public_url(unique_filename)
+
+        # Update user profile with new picture URL
+        updated_user = await update_user(user_id, UserUpdate(profile_picture=public_url))
+
+        return updated_user
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error uploading profile picture: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"Erro ao fazer upload da foto: {str(e)}")

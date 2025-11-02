@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from typing import List, Annotated
 from schemas.user import User, UserCreate, UserLogin, UserUpdate, Token, LoginResponse
 from schemas.event import Event
@@ -46,16 +46,19 @@ async def search_users(query: str, limit: int = 10):
     from services.user_service import search_users
     return await search_users(query, limit)
 
-@router.get("/{user_id}", response_model=User)
-async def get_user_by_id(user_id: str):
-    """Get user by ID"""
-    print(f"GET /users/{user_id} called")
-    from services.user_service import get_user
-    user = await get_user(user_id)
-    print(f"User found: {user is not None}")
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+# Rotas mais específicas devem vir ANTES das genéricas para evitar conflitos de roteamento
+@router.post("/{user_id}/profile-picture", response_model=User)
+async def upload_profile_picture(
+    user_id: str,
+    image: Annotated[UploadFile, File()],
+    current_user_id: Annotated[str, Depends(get_current_user_id)]
+):
+    """Upload a profile picture for the user (only the authenticated user can upload their own picture)"""
+    if current_user_id != user_id:
+        raise HTTPException(status_code=403, detail="Você só pode fazer upload da sua própria foto de perfil")
+    
+    from services.user_service import upload_profile_picture
+    return await upload_profile_picture(user_id, image)
 
 @router.patch("/{user_id}", response_model=User)
 async def update_user_profile(
@@ -69,3 +72,15 @@ async def update_user_profile(
     
     from services.user_service import update_user
     return await update_user(user_id, user_update)
+
+# Rota genérica por último
+@router.get("/{user_id}", response_model=User)
+async def get_user_by_id(user_id: str):
+    """Get user by ID"""
+    print(f"GET /users/{user_id} called")
+    from services.user_service import get_user
+    user = await get_user(user_id)
+    print(f"User found: {user is not None}")
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
