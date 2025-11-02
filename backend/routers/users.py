@@ -76,6 +76,15 @@ async def update_user_profile(
     from services.user_service import update_user
     return await update_user(user_id, user_update)
 
+@router.get("/{user_id}/events", response_model=List[Event])
+async def get_user_events_by_id(user_id: str):
+    """Get all events created by a specific user (public endpoint)"""
+    from services.event_service import get_user_events
+    try:
+        return await get_user_events(user_id)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Error fetching user events: {str(e)}")
+
 # Rota genérica por último
 @router.get("/{user_id}", response_model=User)
 async def get_user_by_id(user_id: str):
