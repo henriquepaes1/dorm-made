@@ -17,6 +17,11 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+class UserUpdate(BaseModel):
+    university: Optional[str] = None
+    description: Optional[str] = None
+    profile_picture: Optional[str] = None
+
 class User(UserBase):
     id: str
     created_at: datetime

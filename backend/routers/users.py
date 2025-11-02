@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Annotated
-from schemas.user import User, UserCreate, UserLogin, Token, LoginResponse
+from schemas.user import User, UserCreate, UserLogin, UserUpdate, Token, LoginResponse
 from schemas.event import Event
 from utils.auth import get_current_user_id
 
@@ -50,3 +50,16 @@ async def get_user_by_id(user_id: str):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+@router.patch("/{user_id}", response_model=User)
+async def update_user_profile(
+    user_id: str,
+    user_update: UserUpdate,
+    current_user_id: Annotated[str, Depends(get_current_user_id)]
+):
+    """Update user profile (only the authenticated user can update their own profile)"""
+    if current_user_id != user_id:
+        raise HTTPException(status_code=403, detail="You can only update your own profile")
+    
+    from services.user_service import update_user
+    return await update_user(user_id, user_update)

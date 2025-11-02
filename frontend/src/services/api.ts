@@ -174,6 +174,19 @@ export const getUser = async (userId: string): Promise<User> => {
   return response.data;
 };
 
+export interface UserUpdate {
+  university?: string | null;
+  description?: string | null;
+  profile_picture?: string | null;
+}
+
+export const updateUser = async (userId: string, userUpdate: UserUpdate): Promise<User> => {
+  console.log(`Updating user ${userId} with:`, userUpdate);
+  const response = await api.patch(`/users/${userId}`, userUpdate);
+  console.log('Updated user response:', response.data);
+  return response.data;
+};
+
 export const getUserRecipes = async (userId: string): Promise<Recipe[]> => {
   const response = await api.get(`/users/${userId}/recipes`);
   return response.data;
