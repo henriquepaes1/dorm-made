@@ -1,9 +1,11 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from typing import List, Optional
 from .user_service import get_user
 from database import supabase
 from schemas.event import Event, EventCreate
 from schemas.event_participant import EventParticipant, EventParticipantCreate
+import uuid
+from datetime import datetime
 
 def get_event(event_id: str) -> Optional[Event]:
     """Get event by ID from Supabase"""
@@ -25,21 +27,59 @@ def is_user_participating(event_id: str, user_id: str) -> bool:
         print(f"Error checking participation: {e}")
         return False
 
-async def create_event(event: EventCreate, host_user_id: str) -> Event:
-    """Create a new culinary event"""
+async def upload_event_image(image: UploadFile) -> str:
+    """Upload an event image to Supabase Storage and return the public URL"""
+    try:
+        # Validate file type
+        allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+        if image.content_type not in allowed_types:
+            raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG, PNG, and WebP images are allowed.")
+
+        # Validate file size (5MB max)
+        contents = await image.read()
+        if len(contents) > 5 * 1024 * 1024:  # 5MB in bytes
+            raise HTTPException(status_code=400, detail="File size exceeds 5MB limit.")
+
+        # Generate unique filename
+        file_extension = image.filename.split('.')[-1] if image.filename else 'jpg'
+        unique_filename = f"{uuid.uuid4()}_{int(datetime.now().timestamp())}.{file_extension}"
+
+        # Upload to Supabase Storage
+        result = supabase.storage.from_("event-images").upload(
+            unique_filename,
+            contents,
+            {"content-type": image.content_type}
+        )
+
+        # Get public URL
+        public_url = supabase.storage.from_("event-images").get_public_url(unique_filename)
+
+        return public_url
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error uploading image: {str(e)}")
+
+async def create_event(event: EventCreate, host_user_id: str, image: Optional[UploadFile] = None) -> Event:
+    """Create a new culinary event with optional image upload"""
     # Verify host user exists
     host = get_user(host_user_id)
     if not host:
         raise HTTPException(status_code=404, detail="Host user not found")
 
     try:
+        # Upload image if provided
+        image_url = None
+        if image and image.filename:
+            image_url = await upload_event_image(image)
+
         # Convert string event_date to datetime
-        from datetime import datetime
         event_date = datetime.fromisoformat(event.event_date.replace('Z', '+00:00'))
-        
+
         event_data = event.model_dump()
         event_data["host_user_id"] = str(host_user_id)  # Add the authenticated user as host
         event_data["current_participants"] = 0  # Initialize with 0 participants
+        event_data["image_url"] = image_url  # Add image URL if available
 
         result = supabase.table("events").insert(event_data).execute()
         if result.data:

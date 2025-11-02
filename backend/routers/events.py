@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends
-from typing import List, Annotated
+from fastapi import APIRouter, Depends, File, UploadFile, Form
+from typing import List, Annotated, Optional
 from pydantic import BaseModel
 from schemas.event import Event, EventCreate
 from schemas.event_participant import EventParticipant
@@ -12,12 +12,27 @@ class JoinEventRequest(BaseModel):
 
 @router.post("/", response_model=Event)
 async def create_event(
-    event: EventCreate,
-    current_user_id: Annotated[str, Depends(get_current_user_id)]
+    title: Annotated[str, Form()],
+    description: Annotated[str, Form()],
+    max_participants: Annotated[int, Form()],
+    location: Annotated[str, Form()],
+    event_date: Annotated[str, Form()],
+    current_user_id: Annotated[str, Depends(get_current_user_id)],
+    image: Annotated[Optional[UploadFile], File()] = None
 ):
-    """Create a new culinary event"""
+    """Create a new culinary event with optional image upload"""
     from services.event_service import create_event
-    return await create_event(event, current_user_id)
+
+    # Construct EventCreate object from form data
+    event_data = EventCreate(
+        title=title,
+        description=description,
+        max_participants=max_participants,
+        location=location,
+        event_date=event_date
+    )
+
+    return await create_event(event_data, current_user_id, image)
 
 @router.post("/join/")
 async def join_event(

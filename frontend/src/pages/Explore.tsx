@@ -105,11 +105,19 @@ export default function Explore() {
 
   const renderEventCard = (event: Event) => (
     <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-2">🍳</div>
-          <p className="text-sm text-muted-foreground">Culinary Event</p>
-        </div>
+      <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
+        {event.image_url ? (
+          <img
+            src={event.image_url}
+            alt={event.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="text-center">
+            <div className="text-4xl mb-2">🍳</div>
+            <p className="text-sm text-muted-foreground">Culinary Event</p>
+          </div>
+        )}
       </div>
       <CardContent className="p-4">
         <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
