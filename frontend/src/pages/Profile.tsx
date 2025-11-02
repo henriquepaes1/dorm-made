@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getUser, updateUser, uploadProfilePicture } from "@/services/api";
+import { getUser, updateUser, uploadProfilePicture, getAuthToken } from "@/services/api";
 import { User } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { GraduationCap, User as UserIcon, ArrowLeft, UtensilsCrossed, Edit2, Save, X, Upload, Image as ImageIcon } from "lucide-react";
@@ -166,6 +166,15 @@ export default function Profile() {
 
     const targetUserId = userId || user?.id;
     if (!targetUserId) return;
+
+    console.log('[DEBUG PROFILE] Upload iniciado:', {
+      userId: targetUserId,
+      file: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      apiBaseURL: import.meta.env.VITE_API_URL || 'https://dorm-made-production.up.railway.app',
+      token: getAuthToken() ? 'Present' : 'Missing'
+    });
 
     try {
       setUploadingPhoto(true);

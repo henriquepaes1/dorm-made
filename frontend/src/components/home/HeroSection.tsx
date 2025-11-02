@@ -36,7 +36,7 @@ export function HeroSection() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-              Connect to College Students Cooking Near You Helooooo]
+              Connect to College Students Cooking Near You
             </p>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
               Join a vibrant marketplace where student chefs host group meals

@@ -54,6 +54,9 @@ async def upload_profile_picture(
     current_user_id: Annotated[str, Depends(get_current_user_id)]
 ):
     """Upload a profile picture for the user (only the authenticated user can upload their own picture)"""
+    print(f"[DEBUG] Upload profile picture - user_id: {user_id}, current_user_id: {current_user_id}")
+    print(f"[DEBUG] File received: {image.filename}, Content-Type: {image.content_type}")
+    
     if current_user_id != user_id:
         raise HTTPException(status_code=403, detail="Você só pode fazer upload da sua própria foto de perfil")
     
