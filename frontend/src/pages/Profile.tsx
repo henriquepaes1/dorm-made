@@ -9,10 +9,10 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getUser, updateUser, uploadProfilePicture, getAuthToken } from "@/services/api";
-import { User } from "@/services/api";
+import { getUser, updateUser, uploadProfilePicture, getAuthToken, getUserEvents } from "@/services/api";
+import { User, Event } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, User as UserIcon, ArrowLeft, UtensilsCrossed, Edit2, Save, X, Upload, Image as ImageIcon } from "lucide-react";
+import { GraduationCap, User as UserIcon, ArrowLeft, UtensilsCrossed, Edit2, Save, X, Upload, Image as ImageIcon, MapPin, Clock, Users } from "lucide-react";
 
 export default function Profile() {
   const { userId } = useParams<{ userId: string }>();
@@ -22,6 +22,8 @@ export default function Profile() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [userEvents, setUserEvents] = useState<Event[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -37,6 +39,7 @@ export default function Profile() {
           const currentUser = JSON.parse(currentUserStr);
           setUser(currentUser);
           setEditingUser({ ...currentUser });
+          loadUserEvents(currentUser.id);
         } catch (e) {
           console.error("Error parsing currentUser:", e);
         }
@@ -55,6 +58,8 @@ export default function Profile() {
       console.log("User data loaded:", userData);
       setUser(userData);
       setEditingUser({ ...userData });
+      // Carregar eventos após o usuário ser carregado
+      await loadUserEvents(userData.id);
     } catch (error: any) {
       console.error("Error loading user:", error);
       console.error("Error response:", error.response?.data);
@@ -208,6 +213,35 @@ export default function Profile() {
     }
   };
 
+  const loadUserEvents = async (targetUserId?: string) => {
+    const idToUse = targetUserId || userId || user?.id;
+    if (!idToUse) return;
+
+    try {
+      setLoadingEvents(true);
+      const events = await getUserEvents(idToUse);
+      setUserEvents(events);
+    } catch (error: any) {
+      console.error("Error loading user events:", error);
+      // Não mostrar toast de erro, apenas logar - pode ser que o usuário não tenha eventos
+      setUserEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -215,6 +249,19 @@ export default function Profile() {
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const isOwnProfile = () => {
+    const currentUserStr = localStorage.getItem('currentUser');
+    if (currentUserStr && user) {
+      try {
+        const currentUser = JSON.parse(currentUserStr);
+        return currentUser.id === user.id;
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
   };
 
   if (loading) {
@@ -440,6 +487,91 @@ export default function Profile() {
                   )}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* My Meals Section */}
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="mb-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary-glow/20 flex items-center justify-center">
+                    <UtensilsCrossed className="h-5 w-5 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-bold">
+                    {isOwnProfile() ? "My Meals" : "Meals"}
+                  </h2>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Eventos criados por {user.name}
+                </p>
+              </div>
+
+              {loadingEvents ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Carregando eventos...</p>
+                  </div>
+                </div>
+              ) : userEvents.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-4xl mb-4">🍽️</div>
+                  <h3 className="text-lg font-semibold mb-2">Nenhum evento criado ainda</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {user.id === JSON.parse(localStorage.getItem('currentUser') || '{}')?.id 
+                      ? "Crie seu primeiro evento culinário para começar!"
+                      : `${user.name} ainda não criou nenhum evento.`}
+                  </p>
+                  {user.id === JSON.parse(localStorage.getItem('currentUser') || '{}')?.id && (
+                    <Button asChild>
+                      <Link to="/create-event">Criar Evento</Link>
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userEvents.map((event) => (
+                    <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
+                        {event.image_url ? (
+                          <img
+                            src={event.image_url}
+                            alt={event.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-center">
+                            <div className="text-4xl mb-2">🍳</div>
+                            <p className="text-sm text-muted-foreground">Culinary Event</p>
+                          </div>
+                        )}
+                      </div>
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                          {event.description}
+                        </p>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4 mr-2" />
+                            {formatDate(event.event_date)}
+                          </div>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <MapPin className="h-4 w-4 mr-2" />
+                            {event.location}
+                          </div>
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Users className="h-4 w-4 mr-2" />
+                            {event.current_participants}/{event.max_participants} participantes
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
