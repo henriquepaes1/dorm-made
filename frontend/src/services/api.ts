@@ -246,4 +246,11 @@ export const getJoinedEvents = async (): Promise<Event[]> => {
   return response.data;
 };
 
+export const searchUsers = async (query: string, limit: number = 10): Promise<User[]> => {
+  const response = await api.get('/users/search', {
+    params: { query, limit }
+  });
+  return response.data;
+};
+
 export default api;

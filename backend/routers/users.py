@@ -40,6 +40,12 @@ async def test_endpoint():
     """Test endpoint to verify users router is working"""
     return {"message": "Users router is working"}
 
+@router.get("/search", response_model=List[User])
+async def search_users(query: str, limit: int = 10):
+    """Search users by name"""
+    from services.user_service import search_users
+    return await search_users(query, limit)
+
 @router.get("/{user_id}", response_model=User)
 async def get_user_by_id(user_id: str):
     """Get user by ID"""

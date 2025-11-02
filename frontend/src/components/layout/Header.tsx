@@ -1,12 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, User, Plus } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { removeAuthToken, getAuthToken } from "@/services/api";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { removeAuthToken, getAuthToken, searchUsers, User as UserType } from "@/services/api";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export function Header() {
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<UserType[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = () => {
@@ -47,6 +55,87 @@ export function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    // Cleanup timeout on unmount
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Close search when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    if (isSearchOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchOpen]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // If query is less than 2 characters, clear results
+    if (value.trim().length < 2) {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+      return;
+    }
+
+    // Debounce search
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await searchUsers(value.trim(), 8);
+        setSearchResults(results);
+        setIsSearchOpen(results.length > 0);
+        setIsSearching(false);
+      } catch (error) {
+        console.error('Error searching users:', error);
+        setSearchResults([]);
+        setIsSearchOpen(false);
+        setIsSearching(false);
+      }
+    }, 300);
+  };
+
+  const handleUserSelect = (userId: string) => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setIsSearchOpen(false);
+    navigate(`/profile/${userId}`);
+  };
+
+  const handleExploreClick = (e: React.MouseEvent) => {
+    if (searchQuery.trim().length >= 2) {
+      e.preventDefault();
+      navigate(`/explore?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('userEmail');
@@ -67,20 +156,77 @@ export function Header() {
         </Link>
 
         {/* Search Bar - Hidden on mobile */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
+        <div className="hidden md:flex flex-1 max-w-md mx-8" ref={searchContainerRef}>
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
             <Input
-              placeholder="Search meals, chefs, cuisine..."
+              placeholder="Buscar usuários..."
               className="pl-10 bg-muted/50"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => {
+                if (searchResults.length > 0) {
+                  setIsSearchOpen(true);
+                }
+              }}
             />
+            
+            {/* Search Results Dropdown */}
+            {isSearchOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-popover border rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+                {isSearching ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Buscando...
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="py-2">
+                    {searchResults.map((user) => (
+                      <button
+                        key={user.id}
+                        onClick={() => handleUserSelect(user.id)}
+                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-accent transition-colors text-left"
+                      >
+                        <Avatar className="h-10 w-10">
+                          {user.profile_picture ? (
+                            <AvatarImage 
+                              src={user.profile_picture} 
+                              alt={user.name}
+                            />
+                          ) : null}
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
+                            {getInitials(user.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">
+                            {user.name}
+                          </div>
+                          {user.university && (
+                            <div className="text-xs text-muted-foreground truncate">
+                              {user.university}
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Nenhum usuário encontrado
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/explore">
+            <Link 
+              to={searchQuery.trim().length >= 2 ? `/explore?search=${encodeURIComponent(searchQuery.trim())}` : "/explore"}
+              onClick={handleExploreClick}
+            >
               <Search className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Explore</span>
             </Link>

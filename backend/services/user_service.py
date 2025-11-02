@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from typing import Optional
+from typing import Optional, List
 from database import supabase
 from schemas.user import User, UserCreate, UserLogin, UserUpdate, Token, LoginResponse
 from utils.password import hash_password, verify_password, create_access_token
@@ -127,3 +127,28 @@ async def update_user(user_id: str, user_update: UserUpdate) -> User:
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Error updating user: {str(e)}")
+
+async def search_users(query: str, limit: int = 10) -> List[User]:
+    """Search users by name"""
+    try:
+        if not query or len(query.strip()) < 2:
+            return []
+        
+        # Use ilike for case-insensitive search in Supabase
+        result = supabase.table("users").select("*").ilike("name", f"%{query.strip()}%").limit(limit).execute()
+        
+        users = []
+        if result.data:
+            for user_data in result.data:
+                # Ensure optional fields are handled correctly
+                user_data.setdefault("university", None)
+                user_data.setdefault("description", None)
+                user_data.setdefault("profile_picture", None)
+                users.append(User(**user_data))
+        
+        return users
+    except Exception as e:
+        print(f"Error searching users: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"Error searching users: {str(e)}")
