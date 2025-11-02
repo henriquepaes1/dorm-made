@@ -14,7 +14,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  university: string;
+  university?: string | null;
+  description?: string | null;
+  profile_picture?: string | null;
   created_at: string;
 }
 

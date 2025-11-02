@@ -127,7 +127,7 @@ export default function Auth() {
         className: "bg-green-500 text-white border-green-600",
       });
       
-      navigate('/explore');
+      navigate(`/profile/${loginResponse.user.id}`);
     } catch (error: any) {
       let errorMessage = "Failed to log in";
       

@@ -4,16 +4,23 @@ from database import supabase
 from schemas.user import User, UserCreate, UserLogin, Token, LoginResponse
 from utils.password import hash_password, verify_password, create_access_token
 
-def get_user(user_id: str) -> Optional[User]:
+async def get_user(user_id: str) -> Optional[User]:
     """Get user by ID from Supabase"""
     try:
         result = supabase.table("users").select("*").eq("id", user_id).execute()
-        if result.data:
-            return User(**result.data[0])
+        if result.data and len(result.data) > 0:
+            user_data = result.data[0]
+            # Ensure optional fields are handled correctly
+            user_data.setdefault("university", None)
+            user_data.setdefault("description", None)
+            user_data.setdefault("profile_picture", None)
+            return User(**user_data)
         return None
     except Exception as e:
-        
         print(f"Error getting user: {e}")
+        print(f"User ID: {user_id}")
+        import traceback
+        traceback.print_exc()
         return None
 
 async def create_user(user: UserCreate) -> User:
@@ -69,7 +76,9 @@ async def authenticate_user(login_data: UserLogin) -> LoginResponse:
         id=user["id"],
         name=user["name"],
         email=user["email"],
-        university=user["university"],
+        university=user.get("university"),
+        description=user.get("description"),
+        profile_picture=user.get("profile_picture"),
         created_at=user["created_at"]
     )
     

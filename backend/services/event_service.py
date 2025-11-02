@@ -28,7 +28,7 @@ def is_user_participating(event_id: str, user_id: str) -> bool:
 async def create_event(event: EventCreate, host_user_id: str) -> Event:
     """Create a new culinary event"""
     # Verify host user exists
-    host = get_user(host_user_id)
+    host = await get_user(host_user_id)
     if not host:
         raise HTTPException(status_code=404, detail="Host user not found")
 
@@ -54,7 +54,7 @@ async def join_event(join_request) -> dict:
     event_id = join_request["event_id"] if isinstance(join_request, dict) else join_request.event_id
 
     # Verify user exists
-    user = get_user(user_id)
+    user = await get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
