@@ -75,6 +75,7 @@ export interface Event {
   current_participants: number;
   event_date: string;
   location: string;
+  image_url?: string;
   created_at: string;
 }
 
@@ -187,8 +188,15 @@ export const getRecipe = async (recipeId: string): Promise<Recipe> => {
 };
 
 // Events API
-export const createEvent = async (eventData: EventCreate): Promise<Event> => {
-  const response = await api.post('/events/', eventData);
+export const createEvent = async (eventData: EventCreate | FormData): Promise<Event> => {
+  // If eventData is FormData, we need to send it with multipart/form-data content type
+  const config = eventData instanceof FormData ? {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  } : {};
+
+  const response = await api.post('/events/', eventData, config);
   return response.data;
 };
 

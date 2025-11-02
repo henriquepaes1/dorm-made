@@ -9,18 +9,18 @@ export function HeroSection() {
   const handleFindMeals = () => {
     const token = getAuthToken();
     if (token) {
-      navigate('/explore');
+      navigate("/explore");
     } else {
-      navigate('/login');
+      navigate("/login");
     }
   };
 
   const handleBecomeChef = () => {
     const token = getAuthToken();
     if (token) {
-      navigate('/explore');
+      navigate("/explore");
     } else {
-      navigate('/login');
+      navigate("/login");
     }
   };
 
@@ -36,27 +36,27 @@ export function HeroSection() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-              Connect to College Students Cooking Near You
+              Connect to College Students Cooking Near You Helooooo]
             </p>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Join a vibrant marketplace where student chefs host group meals and foodies discover authentic cultural experiences.
+              Join a vibrant marketplace where student chefs host group meals
+              and foodies discover authentic cultural experiences.
             </p>
           </div>
 
-
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-gradient-to-r from-primary to-primary-glow min-w-[180px]"
               onClick={handleFindMeals}
             >
               <Utensils className="mr-2 h-5 w-5" />
               Find Meals
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
+            <Button
+              size="lg"
+              variant="outline"
               className="min-w-[180px]"
               onClick={handleBecomeChef}
             >
@@ -85,10 +85,18 @@ export function HeroSection() {
 
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 text-6xl opacity-10 rotate-12">🍝</div>
-        <div className="absolute top-32 right-16 text-5xl opacity-10 -rotate-12">🍜</div>
-        <div className="absolute bottom-20 left-20 text-4xl opacity-10 rotate-45">🥘</div>
-        <div className="absolute bottom-32 right-12 text-5xl opacity-10 -rotate-45">🍲</div>
+        <div className="absolute top-20 left-10 text-6xl opacity-10 rotate-12">
+          🍝
+        </div>
+        <div className="absolute top-32 right-16 text-5xl opacity-10 -rotate-12">
+          🍜
+        </div>
+        <div className="absolute bottom-20 left-20 text-4xl opacity-10 rotate-45">
+          🥘
+        </div>
+        <div className="absolute bottom-32 right-12 text-5xl opacity-10 -rotate-45">
+          🍲
+        </div>
       </div>
     </section>
   );
