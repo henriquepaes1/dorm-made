@@ -1,19 +1,26 @@
 from fastapi import HTTPException
 from typing import Optional
 from database import supabase
-from schemas.user import User, UserCreate, UserLogin, Token, LoginResponse
+from schemas.user import User, UserCreate, UserLogin, UserUpdate, Token, LoginResponse
 from utils.password import hash_password, verify_password, create_access_token
 
-def get_user(user_id: str) -> Optional[User]:
+async def get_user(user_id: str) -> Optional[User]:
     """Get user by ID from Supabase"""
     try:
         result = supabase.table("users").select("*").eq("id", user_id).execute()
-        if result.data:
-            return User(**result.data[0])
+        if result.data and len(result.data) > 0:
+            user_data = result.data[0]
+            # Ensure optional fields are handled correctly
+            user_data.setdefault("university", None)
+            user_data.setdefault("description", None)
+            user_data.setdefault("profile_picture", None)
+            return User(**user_data)
         return None
     except Exception as e:
-        
         print(f"Error getting user: {e}")
+        print(f"User ID: {user_id}")
+        import traceback
+        traceback.print_exc()
         return None
 
 async def create_user(user: UserCreate) -> User:
@@ -69,7 +76,9 @@ async def authenticate_user(login_data: UserLogin) -> LoginResponse:
         id=user["id"],
         name=user["name"],
         email=user["email"],
-        university=user["university"],
+        university=user.get("university"),
+        description=user.get("description"),
+        profile_picture=user.get("profile_picture"),
         created_at=user["created_at"]
     )
     
@@ -78,3 +87,43 @@ async def authenticate_user(login_data: UserLogin) -> LoginResponse:
         token_type="bearer",
         user=user_obj
     )
+
+async def update_user(user_id: str, user_update: UserUpdate) -> User:
+    """Update user information"""
+    try:
+        # Prepare update data, only including fields that are not None
+        update_data = {}
+        if user_update.university is not None:
+            update_data["university"] = user_update.university
+        if user_update.description is not None:
+            update_data["description"] = user_update.description
+        if user_update.profile_picture is not None:
+            update_data["profile_picture"] = user_update.profile_picture
+
+        if not update_data:
+            # If no fields to update, just return the current user
+            user = await get_user(user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            return user
+
+        # Update in Supabase
+        result = supabase.table("users").update(update_data).eq("id", user_id).execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_data = result.data[0]
+        # Ensure optional fields are handled correctly
+        user_data.setdefault("university", None)
+        user_data.setdefault("description", None)
+        user_data.setdefault("profile_picture", None)
+        
+        return User(**user_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating user: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=f"Error updating user: {str(e)}")

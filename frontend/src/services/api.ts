@@ -1,9 +1,12 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://dorm-made-production.up.railway.app/';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://dorm-made-production.up.railway.app';
+
+// Remover barra final se existir
+const normalizedBaseUrl = API_BASE_URL.replace(/\/$/, '');
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: normalizedBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -14,7 +17,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  university: string;
+  university?: string | null;
+  description?: string | null;
+  profile_picture?: string | null;
   created_at: string;
 }
 
@@ -132,15 +137,17 @@ api.interceptors.response.use(
   },
   (error) => {
     console.log('API Error:', error.response?.status, error.response?.data);
+    console.log('Request URL:', error.config?.url);
     
     if (error.response?.status === 401) {
       console.log('401 Error - clearing token and redirecting to login');
       // Token might be invalid, clear it
       removeAuthToken();
-      // Only redirect to login if not already there and not on create-event page
+      // Não redirecionar se estiver na página de perfil (pode ser erro de validação)
       if (window.location.pathname !== '/login' && 
           window.location.pathname !== '/signup' &&
-          window.location.pathname !== '/create-event') {
+          window.location.pathname !== '/create-event' &&
+          !window.location.pathname.startsWith('/profile/')) {
         window.location.href = '/login';
       }
     }
@@ -160,7 +167,23 @@ export const loginUser = async (loginData: UserLogin): Promise<LoginResponse> =>
 };
 
 export const getUser = async (userId: string): Promise<User> => {
+  console.log(`Fetching user with ID: ${userId}`);
+  console.log(`Full URL will be: ${api.defaults.baseURL}/users/${userId}`);
   const response = await api.get(`/users/${userId}`);
+  console.log('User response:', response.data);
+  return response.data;
+};
+
+export interface UserUpdate {
+  university?: string | null;
+  description?: string | null;
+  profile_picture?: string | null;
+}
+
+export const updateUser = async (userId: string, userUpdate: UserUpdate): Promise<User> => {
+  console.log(`Updating user ${userId} with:`, userUpdate);
+  const response = await api.patch(`/users/${userId}`, userUpdate);
+  console.log('Updated user response:', response.data);
   return response.data;
 };
 

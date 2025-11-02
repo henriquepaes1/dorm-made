@@ -63,7 +63,7 @@ async def upload_event_image(image: UploadFile) -> str:
 async def create_event(event: EventCreate, host_user_id: str, image: Optional[UploadFile] = None) -> Event:
     """Create a new culinary event with optional image upload"""
     # Verify host user exists
-    host = get_user(host_user_id)
+    host = await get_user(host_user_id)
     if not host:
         raise HTTPException(status_code=404, detail="Host user not found")
 
@@ -94,7 +94,7 @@ async def join_event(join_request) -> dict:
     event_id = join_request["event_id"] if isinstance(join_request, dict) else join_request.event_id
 
     # Verify user exists
-    user = get_user(user_id)
+    user = await get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
