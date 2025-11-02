@@ -18,10 +18,19 @@ async def create_event(
     location: Annotated[str, Form()],
     event_date: Annotated[str, Form()],
     current_user_id: Annotated[str, Depends(get_current_user_id)],
+    price: Annotated[Optional[str], Form()] = None,
     image: Annotated[Optional[UploadFile], File()] = None
 ):
     """Create a new culinary event with optional image upload"""
     from services.event_service import create_event
+
+    # Parse price: convert to float if provided and not empty, otherwise None
+    price_float = None
+    if price and str(price).strip():
+        try:
+            price_float = float(price)
+        except (ValueError, TypeError):
+            price_float = None
 
     # Construct EventCreate object from form data
     event_data = EventCreate(
@@ -29,7 +38,8 @@ async def create_event(
         description=description,
         max_participants=max_participants,
         location=location,
-        event_date=event_date
+        event_date=event_date,
+        price=price_float
     )
 
     return await create_event(event_data, current_user_id, image)

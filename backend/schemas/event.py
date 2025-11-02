@@ -8,6 +8,7 @@ class EventBase(BaseModel):
     max_participants: int
     location: str
     image_url: Optional[str] = None
+    price: Optional[float] = None
 
 class EventCreate(EventBase):
     event_date: str  # Accept as string from frontend

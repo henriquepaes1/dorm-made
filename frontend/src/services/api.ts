@@ -79,6 +79,7 @@ export interface Event {
   event_date: string;
   location: string;
   image_url?: string;
+  price?: number;
   created_at: string;
 }
 
@@ -88,6 +89,7 @@ export interface EventCreate {
   max_participants: number;
   event_date: string;
   location: string;
+  price?: number;
 }
 
 export interface JoinEventRequest {
