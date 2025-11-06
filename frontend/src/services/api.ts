@@ -1,11 +1,11 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -49,7 +49,6 @@ export interface Recipe {
   ingredients: string[];
   instructions: string;
   prep_time: number;
-  difficulty: 'easy' | 'medium' | 'hard';
   created_at: string;
 }
 
@@ -60,7 +59,6 @@ export interface RecipeCreate {
   ingredients: string[];
   instructions: string;
   prep_time: number;
-  difficulty: 'easy' | 'medium' | 'hard';
 }
 
 export interface Event {
@@ -91,23 +89,23 @@ export interface JoinEventRequest {
 
 // Token management
 export const setAuthToken = (token: string) => {
-  localStorage.setItem('authToken', token);
-  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  localStorage.setItem("authToken", token);
+  api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 };
 
 export const getAuthToken = (): string | null => {
-  return localStorage.getItem('authToken');
+  return localStorage.getItem("authToken");
 };
 
 export const removeAuthToken = () => {
-  localStorage.removeItem('authToken');
-  delete api.defaults.headers.common['Authorization'];
+  localStorage.removeItem("authToken");
+  delete api.defaults.headers.common["Authorization"];
 };
 
 // Initialize token if it exists
 const token = getAuthToken();
 if (token) {
-  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 }
 
 // Add request interceptor to ensure token is always included
@@ -121,7 +119,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Add response interceptor to handle auth errors
@@ -130,31 +128,33 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.log('API Error:', error.response?.status, error.response?.data);
-    
+    console.log("API Error:", error.response?.status, error.response?.data);
+
     if (error.response?.status === 401) {
-      console.log('401 Error - clearing token and redirecting to login');
+      console.log("401 Error - clearing token and redirecting to login");
       // Token might be invalid, clear it
       removeAuthToken();
       // Only redirect to login if not already there and not on create-event page
-      if (window.location.pathname !== '/login' && 
-          window.location.pathname !== '/signup' &&
-          window.location.pathname !== '/create-event') {
-        window.location.href = '/login';
+      if (
+        window.location.pathname !== "/login" &&
+        window.location.pathname !== "/signup" &&
+        window.location.pathname !== "/create-event"
+      ) {
+        window.location.href = "/login";
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Users API
 export const createUser = async (userData: UserCreate): Promise<User> => {
-  const response = await api.post('/users/', userData);
+  const response = await api.post("/users/", userData);
   return response.data;
 };
 
 export const loginUser = async (loginData: UserLogin): Promise<LoginResponse> => {
-  const response = await api.post('/users/login', loginData);
+  const response = await api.post("/users/login", loginData);
   return response.data;
 };
 
@@ -175,7 +175,7 @@ export const getUserEvents = async (userId: string): Promise<Event[]> => {
 
 // Recipes API
 export const createRecipe = async (recipeData: RecipeCreate): Promise<Recipe> => {
-  const response = await api.post('/recipes/', recipeData);
+  const response = await api.post("/recipes/", recipeData);
   return response.data;
 };
 
@@ -186,12 +186,12 @@ export const getRecipe = async (recipeId: string): Promise<Recipe> => {
 
 // Events API
 export const createEvent = async (eventData: EventCreate): Promise<Event> => {
-  const response = await api.post('/events/', eventData);
+  const response = await api.post("/events/", eventData);
   return response.data;
 };
 
 export const getEvents = async (): Promise<Event[]> => {
-  const response = await api.get('/events/');
+  const response = await api.get("/events/");
   return response.data;
 };
 
@@ -200,18 +200,20 @@ export const getEvent = async (eventId: string): Promise<Event> => {
   return response.data;
 };
 
-export const joinEvent = async (joinData: JoinEventRequest): Promise<{ message: string; event_id: string }> => {
-  const response = await api.post('/events/join/', joinData);
+export const joinEvent = async (
+  joinData: JoinEventRequest,
+): Promise<{ message: string; event_id: string }> => {
+  const response = await api.post("/events/join/", joinData);
   return response.data;
 };
 
 export const getMyEvents = async (): Promise<Event[]> => {
-  const response = await api.get('/users/me/events');
+  const response = await api.get("/users/me/events");
   return response.data;
 };
 
 export const getJoinedEvents = async (): Promise<Event[]> => {
-  const response = await api.get('/users/me/joined-events');
+  const response = await api.get("/users/me/joined-events");
   return response.data;
 };
 

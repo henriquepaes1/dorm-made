@@ -6,8 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Clock, Users } from "lucide-react";
 import { getEvents, joinEvent, getMyEvents, getJoinedEvents } from "@/services/api";
-import { useToast } from "@/hooks/use-toast";
 import { Event } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Explore() {
   const [allEvents, setAllEvents] = useState<Event[]>([]);
@@ -27,9 +27,9 @@ export default function Explore() {
       const [allEventsData, myEventsData, joinedEventsData] = await Promise.all([
         getEvents(),
         getMyEvents(),
-        getJoinedEvents()
+        getJoinedEvents(),
       ]);
-      
+
       setAllEvents(allEventsData);
       setMyEvents(myEventsData);
       setJoinedEvents(joinedEventsData);
@@ -37,7 +37,7 @@ export default function Explore() {
       toast({
         title: "Error",
         description: "Failed to load events",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -45,12 +45,12 @@ export default function Explore() {
   };
 
   const handleJoinEvent = async (eventId: string) => {
-    const currentUser = localStorage.getItem('currentUser');
+    const currentUser = localStorage.getItem("currentUser");
     if (!currentUser) {
       toast({
         title: "Please Sign In",
         description: "You need to sign in to join events",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -59,21 +59,21 @@ export default function Explore() {
       const user = JSON.parse(currentUser);
       await joinEvent({
         user_id: user.id,
-        event_id: eventId
+        event_id: eventId,
       });
-      
+
       toast({
         title: "Success!",
         description: "You've successfully joined the event!",
       });
-      
+
       // Refresh events to update participant count
       loadAllEvents();
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.response?.data?.detail || "Failed to join event",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -93,13 +93,13 @@ export default function Explore() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -113,10 +113,8 @@ export default function Explore() {
       </div>
       <CardContent className="p-4">
         <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-          {event.description}
-        </p>
-        
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
+
         <div className="space-y-2 mb-4">
           <div className="flex items-center text-sm text-muted-foreground">
             <Clock className="h-4 w-4 mr-2" />
@@ -133,12 +131,12 @@ export default function Explore() {
         </div>
 
         {activeTab === "all" && (
-          <Button 
+          <Button
             className="w-full"
             onClick={() => handleJoinEvent(event.id)}
             disabled={event.current_participants >= event.max_participants}
           >
-            {event.current_participants >= event.max_participants ? 'Event Full' : 'Join Event'}
+            {event.current_participants >= event.max_participants ? "Event Full" : "Join Event"}
           </Button>
         )}
       </CardContent>
@@ -163,13 +161,13 @@ export default function Explore() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">Explore Meals</h1>
+          <h1 className="text-4xl font-bold mb-4">Explore Meals</h1>
           <p className="text-lg text-muted-foreground">
             Discover amazing cultural dining experiences near your campus
           </p>
@@ -184,7 +182,7 @@ export default function Explore() {
           </TabsList>
 
           <TabsContent value="all">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid-cols-2 xl:grid-cols-3 gap-6">
               {allEvents.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <h3 className="text-lg font-semibold mb-2">No events yet</h3>
@@ -197,11 +195,13 @@ export default function Explore() {
           </TabsContent>
 
           <TabsContent value="my">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid-cols-2 xl:grid-cols-3 gap-6">
               {myEvents.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <h3 className="text-lg font-semibold mb-2">No events created yet</h3>
-                  <p className="text-muted-foreground">Create your first culinary event to get started!</p>
+                  <p className="text-muted-foreground">
+                    Create your first culinary event to get started!
+                  </p>
                 </div>
               ) : (
                 myEvents.map(renderEventCard)
@@ -210,7 +210,7 @@ export default function Explore() {
           </TabsContent>
 
           <TabsContent value="joined">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid-cols-2 xl:grid-cols-3 gap-6">
               {joinedEvents.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <h3 className="text-lg font-semibold mb-2">No joined events yet</h3>

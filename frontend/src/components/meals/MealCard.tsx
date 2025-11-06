@@ -45,7 +45,7 @@ export function MealCard({ meal }: MealCardProps) {
               className="h-8 w-8 p-0 bg-background/80 backdrop-blur"
               onClick={() => setIsFavorite(!isFavorite)}
             >
-              <Heart className={`h-4 w-4 ${isFavorite ? 'fill-primary text-primary' : ''}`} />
+              <Heart className={`h-4 w-4 ${isFavorite ? "fill-primary text-primary" : ""}`} />
             </Button>
           </div>
           <div className="absolute bottom-3 left-3">
@@ -90,7 +90,9 @@ export function MealCard({ meal }: MealCardProps) {
             </div>
             <div className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
-              <span>{meal.availableSpots} of {meal.maxGuests} spots left</span>
+              <span>
+                {meal.availableSpots} of {meal.maxGuests} spots left
+              </span>
             </div>
           </div>
 
@@ -106,9 +108,7 @@ export function MealCard({ meal }: MealCardProps) {
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex items-center justify-between">
-        <div className="text-lg font-bold text-primary">
-          ${meal.price.toFixed(2)}
-        </div>
+        <div className="text-lg font-bold text-primary">${meal.price.toFixed(2)}</div>
         <Button size="sm" className="bg-gradient-to-r from-primary to-primary-glow">
           Reserve Now
         </Button>

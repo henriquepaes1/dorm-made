@@ -27,7 +27,6 @@ A FastAPI-based social network for college students to connect through culinary 
 - `ingredients` (Array of Strings)
 - `instructions` (String)
 - `prep_time` (Integer - minutes)
-- `difficulty` (String - easy/medium/hard)
 - `created_at` (Timestamp)
 
 ### Events Table
@@ -102,7 +101,6 @@ curl -X POST "http://localhost:8000/recipes/" \
     "ingredients": ["pasta", "eggs", "bacon", "parmesan"],
     "instructions": "Cook pasta, mix with eggs and bacon...",
     "prep_time": 30,
-    "difficulty": "medium"
   }'
 ```
 

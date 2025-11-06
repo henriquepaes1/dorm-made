@@ -107,7 +107,6 @@ The frontend communicates with the FastAPI backend through the following endpoin
 
 ### Recipe Creation
 - Dynamic ingredient list management
-- Difficulty levels and prep time specification
 - Rich text instructions with textarea
 - Form validation and error handling
 

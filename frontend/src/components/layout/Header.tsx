@@ -10,24 +10,21 @@ export function Header() {
 
   useEffect(() => {
     const checkAuth = () => {
-      const user = localStorage.getItem('currentUser');
+      const user = localStorage.getItem("currentUser");
       const token = getAuthToken();
-      
-      console.log('Header checkAuth - user:', user ? 'present' : 'null');
-      console.log('Header checkAuth - token:', token ? 'present' : 'null');
-      
+
       // Only set user if both user data and token exist
-      if (user && token && user !== 'undefined') {
+      if (user && token && user !== "undefined") {
         try {
           const parsedUser = JSON.parse(user);
-          console.log('Header checkAuth - parsed user:', parsedUser);
+          console.log("Header checkAuth - parsed user:", parsedUser);
           setCurrentUser(parsedUser);
         } catch (error) {
-          console.error('Error parsing user data:', error);
+          console.error("Error parsing user data:", error);
           setCurrentUser(null);
         }
       } else {
-        console.log('Header checkAuth - setting user to null');
+        console.log("Header checkAuth - setting user to null");
         setCurrentUser(null);
       }
     };
@@ -36,23 +33,23 @@ export function Header() {
     checkAuth();
 
     // Listen for storage changes (when user logs in from another tab)
-    window.addEventListener('storage', checkAuth);
-    
+    window.addEventListener("storage", checkAuth);
+
     // Listen for custom login event
-    window.addEventListener('userLogin', checkAuth);
+    window.addEventListener("userLogin", checkAuth);
 
     return () => {
-      window.removeEventListener('storage', checkAuth);
-      window.removeEventListener('userLogin', checkAuth);
+      window.removeEventListener("storage", checkAuth);
+      window.removeEventListener("userLogin", checkAuth);
     };
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('userEmail');
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("userEmail");
     removeAuthToken();
     setCurrentUser(null);
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   return (
@@ -66,26 +63,16 @@ export function Header() {
           <span className="font-bold text-xl text-foreground">Dorm Made</span>
         </Link>
 
-        {/* Search Bar - Hidden on mobile */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8">
+        {/* Search Bar */}
+        <div className="flex flex-1 max-w-md mx-8">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search meals, chefs, cuisine..."
-              className="pl-10 bg-muted/50"
-            />
+            <Input placeholder="Search meals, chefs, cuisine..." className="pl-10 bg-muted/50" />
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/explore">
-              <Search className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Explore</span>
-            </Link>
-          </Button>
-          
           {currentUser && (
             <Button variant="ghost" size="sm" asChild>
               <Link to="/create-event">
@@ -95,23 +82,10 @@ export function Header() {
             </Button>
           )}
 
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/favorites">
-              <Heart className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Favorites</span>
-            </Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/calendar">
-              <Calendar className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Calendar</span>
-            </Link>
-          </Button>
-          
           {currentUser ? (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-muted-foreground hidden sm:inline">
-                Welcome, {currentUser.name.split(' ')[0]}!
+                Welcome, {currentUser.name.split(" ")[0]}!
               </span>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 Logout
