@@ -1,12 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, User, Heart, Calendar, Plus } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { removeAuthToken, getAuthToken } from "@/services/api";
+import { Search, User, Plus } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { removeAuthToken, getAuthToken, searchUsers, User as UserType } from "@/services/api";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export function Header() {
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<UserType[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = () => {
@@ -43,6 +51,90 @@ export function Header() {
       window.removeEventListener("userLogin", checkAuth);
     };
   }, []);
+
+  useEffect(() => {
+    // Cleanup timeout on unmount
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Close search when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    if (isSearchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSearchOpen]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // If query is less than 2 characters, clear results
+    if (value.trim().length < 2) {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+      return;
+    }
+
+    // Debounce search
+    setIsSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await searchUsers(value.trim(), 8);
+        setSearchResults(results);
+        setIsSearchOpen(results.length > 0);
+        setIsSearching(false);
+      } catch (error) {
+        console.error("Error searching users:", error);
+        setSearchResults([]);
+        setIsSearchOpen(false);
+        setIsSearching(false);
+      }
+    }, 300);
+  };
+
+  const handleUserSelect = (userId: string) => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setIsSearchOpen(false);
+    navigate(`/profile/${userId}`);
+  };
+
+  const handleExploreClick = (e: React.MouseEvent) => {
+    if (searchQuery.trim().length >= 2) {
+      e.preventDefault();
+      navigate(`/explore?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("currentUser");

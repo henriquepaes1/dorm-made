@@ -1,9 +1,12 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://dorm-made-production.up.railway.app";
+
+// Remover barra final se existir
+const normalizedBaseUrl = API_BASE_URL.replace(/\/$/, "");
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: normalizedBaseUrl,
   headers: {
     "Content-Type": "application/json",
   },
@@ -14,7 +17,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  university: string;
+  university?: string | null;
+  description?: string | null;
+  profile_picture?: string | null;
   created_at: string;
 }
 
@@ -71,6 +76,8 @@ export interface Event {
   current_participants: number;
   event_date: string;
   location: string;
+  image_url?: string;
+  price?: number;
   created_at: string;
 }
 
@@ -80,6 +87,7 @@ export interface EventCreate {
   max_participants: number;
   event_date: string;
   location: string;
+  price?: number;
 }
 
 export interface JoinEventRequest {
@@ -115,6 +123,12 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Don't override Content-Type if FormData (let browser set it automatically with boundary)
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
+
     return config;
   },
   (error) => {
@@ -129,16 +143,18 @@ api.interceptors.response.use(
   },
   (error) => {
     console.log("API Error:", error.response?.status, error.response?.data);
+    console.log("Request URL:", error.config?.url);
 
     if (error.response?.status === 401) {
       console.log("401 Error - clearing token and redirecting to login");
       // Token might be invalid, clear it
       removeAuthToken();
-      // Only redirect to login if not already there and not on create-event page
+      // Não redirecionar se estiver na página de perfil (pode ser erro de validação)
       if (
         window.location.pathname !== "/login" &&
         window.location.pathname !== "/signup" &&
-        window.location.pathname !== "/create-event"
+        window.location.pathname !== "/create-event" &&
+        !window.location.pathname.startsWith("/profile/")
       ) {
         window.location.href = "/login";
       }
@@ -159,8 +175,60 @@ export const loginUser = async (loginData: UserLogin): Promise<LoginResponse> =>
 };
 
 export const getUser = async (userId: string): Promise<User> => {
+  console.log(`Fetching user with ID: ${userId}`);
+  console.log(`Full URL will be: ${api.defaults.baseURL}/users/${userId}`);
   const response = await api.get(`/users/${userId}`);
+  console.log("User response:", response.data);
   return response.data;
+};
+
+export interface UserUpdate {
+  university?: string | null;
+  description?: string | null;
+  profile_picture?: string | null;
+}
+
+export const updateUser = async (userId: string, userUpdate: UserUpdate): Promise<User> => {
+  console.log(`Updating user ${userId} with:`, userUpdate);
+  const response = await api.patch(`/users/${userId}`, userUpdate);
+  console.log("Updated user response:", response.data);
+  return response.data;
+};
+
+export const uploadProfilePicture = async (userId: string, file: File): Promise<User> => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const url = `/users/${userId}/profile-picture`;
+  const fullUrl = `${api.defaults.baseURL}${url}`;
+
+  console.log("[DEBUG] Upload Profile Picture:", {
+    userId,
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+    url,
+    fullUrl,
+    baseURL: api.defaults.baseURL,
+    hasToken: !!getAuthToken(),
+  });
+
+  // Don't set Content-Type manually - axios/browser will set it automatically with boundary
+  try {
+    const response = await api.post(url, formData);
+    console.log("[DEBUG] Upload successful:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error("[DEBUG] Upload error details:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      requestURL: error.config?.url,
+      requestMethod: error.config?.method,
+      headers: error.config?.headers,
+    });
+    throw error;
+  }
 };
 
 export const getUserRecipes = async (userId: string): Promise<Recipe[]> => {
@@ -185,7 +253,8 @@ export const getRecipe = async (recipeId: string): Promise<Recipe> => {
 };
 
 // Events API
-export const createEvent = async (eventData: EventCreate): Promise<Event> => {
+export const createEvent = async (eventData: EventCreate | FormData): Promise<Event> => {
+  // When sending FormData, don't set Content-Type manually - axios will set it with boundary
   const response = await api.post("/events/", eventData);
   return response.data;
 };
@@ -214,6 +283,13 @@ export const getMyEvents = async (): Promise<Event[]> => {
 
 export const getJoinedEvents = async (): Promise<Event[]> => {
   const response = await api.get("/users/me/joined-events");
+  return response.data;
+};
+
+export const searchUsers = async (query: string, limit: number = 10): Promise<User[]> => {
+  const response = await api.get("/users/search", {
+    params: { query, limit },
+  });
   return response.data;
 };
 

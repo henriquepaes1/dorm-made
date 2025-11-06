@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
@@ -18,6 +18,20 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
     expose_headers=["*"],  # Expose all headers
 )
+
+# Debug middleware to log all requests
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    print(f"[REQUEST] {request.method} {request.url.path}")
+    print(f"[REQUEST] Query params: {dict(request.query_params)}")
+    auth_header = request.headers.get("authorization")
+    if auth_header:
+        print(f"[REQUEST] Authorization: {auth_header[:20]}...")
+    else:
+        print(f"[REQUEST] Authorization: Missing")
+    response = await call_next(request)
+    print(f"[RESPONSE] {response.status_code}")
+    return response
 
 # Include routers
 app.include_router(users.router)

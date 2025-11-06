@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Calendar, MapPin, Users } from "lucide-react";
+import { Calendar, MapPin, Users, Upload, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createEvent, getAuthToken } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +18,10 @@ export default function CreateEvent() {
     max_participants: "",
     event_date: "",
     location: "",
+    price: "",
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -44,6 +47,46 @@ export default function CreateEvent() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select a JPEG, PNG, or WebP image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Image size must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedImage(file);
+
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,19 +132,29 @@ export default function CreateEvent() {
         return;
       }
 
-      // Create the event data
-      const eventData = {
-        title: formData.title,
-        description: formData.description,
-        max_participants: parseInt(formData.max_participants),
-        event_date: formData.event_date,
-        location: formData.location,
-      };
+      // Create FormData to handle both text fields and image upload
+      const formDataToSend = new FormData();
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("max_participants", formData.max_participants);
+      formDataToSend.append("event_date", formData.event_date);
+      formDataToSend.append("location", formData.location);
 
-      console.log("Creating event with data:", eventData);
+      // Add price if provided
+      if (formData.price && formData.price.trim() !== "") {
+        formDataToSend.append("price", formData.price);
+      }
+
+      // Add image if selected
+      if (selectedImage) {
+        formDataToSend.append("image", selectedImage);
+      }
+
+      console.log("Creating event with FormData");
       console.log("Using token:", token ? "Token present" : "No token");
+      console.log("Image attached:", selectedImage ? "Yes" : "No");
 
-      await createEvent(eventData);
+      await createEvent(formDataToSend);
 
       console.log("Event created successfully, redirecting to explore...");
 
@@ -208,6 +261,24 @@ export default function CreateEvent() {
                     />
                   </div>
 
+                  {/* Price */}
+                  <div>
+                    <Label htmlFor="price">Price (US$)</Label>
+                    <Input
+                      id="price"
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      placeholder="0.00"
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Optional - Set the price per participant
+                    </p>
+                  </div>
+
                   {/* Location */}
                   <div className="col-span-2">
                     <Label htmlFor="location">Location</Label>
@@ -219,6 +290,50 @@ export default function CreateEvent() {
                       placeholder="e.g., Dorm Kitchen 3A, Student Center Kitchen"
                       required
                     />
+                  </div>
+
+                  {/* Event Image Upload */}
+                  <div className="md:col-span-2">
+                    <Label htmlFor="event-image">Event Image (Optional)</Label>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Upload an image for your event (Max 5MB, JPEG/PNG/WebP)
+                    </p>
+
+                    {!imagePreview ? (
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                        <Input
+                          id="event-image"
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
+                          onChange={handleImageChange}
+                          className="hidden"
+                        />
+                        <label htmlFor="event-image" className="cursor-pointer">
+                          <Upload className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                          <p className="text-sm font-medium text-gray-700 mb-1">
+                            Click to upload event image
+                          </p>
+                          <p className="text-xs text-gray-500">JPEG, PNG or WebP (max. 5MB)</p>
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="relative rounded-lg overflow-hidden">
+                        <img
+                          src={imagePreview}
+                          alt="Event preview"
+                          className="w-full h-64 object-cover rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={handleRemoveImage}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

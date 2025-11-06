@@ -10,7 +10,7 @@ interface MealCardProps {
     id: string;
     title: string;
     description: string;
-    price: number;
+    price?: number;
     image: string;
     chef: {
       name: string;
@@ -38,7 +38,14 @@ export function MealCard({ meal }: MealCardProps) {
             alt={meal.title}
             className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          <div className="absolute top-3 right-3">
+          {/* Top Right: Price Badge (priority) and Favorite Button */}
+          <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+            {/* Price Badge - Top Right (Priority) */}
+            {meal.price !== undefined && meal.price !== null && (
+              <div className="bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-md">
+                <span className="text-lg font-bold text-primary">${meal.price.toFixed(2)}</span>
+              </div>
+            )}
             <Button
               size="sm"
               variant="secondary"
@@ -108,7 +115,11 @@ export function MealCard({ meal }: MealCardProps) {
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex items-center justify-between">
-        <div className="text-lg font-bold text-primary">${meal.price.toFixed(2)}</div>
+        {meal.price !== undefined && meal.price !== null ? (
+          <div className="text-lg font-bold text-primary">${meal.price.toFixed(2)}</div>
+        ) : (
+          <div className="text-lg font-bold text-muted-foreground">Free</div>
+        )}
         <Button size="sm" className="bg-gradient-to-r from-primary to-primary-glow">
           Reserve Now
         </Button>

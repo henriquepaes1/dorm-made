@@ -1,12 +1,14 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Union
+from typing import Union, Optional
 
 class EventBase(BaseModel):
     title: str
     description: str
     max_participants: int
     location: str
+    image_url: Optional[str] = None
+    price: Optional[float] = None
 
 class EventCreate(EventBase):
     event_date: str  # Accept as string from frontend

@@ -1,8 +1,29 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, Users, Utensils } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { getAuthToken } from "@/services/api";
+import { Users } from "lucide-react";
 
 export function HeroSection() {
+  const navigate = useNavigate();
+
+  const handleFindMeals = () => {
+    const token = getAuthToken();
+    if (token) {
+      navigate("/explore");
+    } else {
+      navigate("/login");
+    }
+  };
+
+  const handleBecomeChef = () => {
+    const token = getAuthToken();
+    if (token) {
+      navigate("/explore");
+    } else {
+      navigate("/login");
+    }
+  };
+
   return (
     <section className="relative py-12 grow">
       <div className="container mx-auto px-4">
