@@ -46,18 +46,10 @@ export function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button size="lg" variant="outline" className="min-w-[180px]">
               <Users className="mr-2 h-5 w-5" />
-              Join chef community
+              Start hosting meals
             </Button>
           </div>
         </div>
-      </div>
-
-      {/* Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 text-6xl opacity-10 rotate-12">🍝</div>
-        <div className="absolute top-32 right-16 text-5xl opacity-10 -rotate-12">🍜</div>
-        <div className="absolute bottom-20 left-20 text-4xl opacity-10 rotate-45">🥘</div>
-        <div className="absolute bottom-32 right-12 text-5xl opacity-10 -rotate-45">🍲</div>
       </div>
     </section>
   );

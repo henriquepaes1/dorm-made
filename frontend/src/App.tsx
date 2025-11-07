@@ -12,15 +12,19 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/explore" element={<Explore />} />
-        <Route path="/create-event" element={<CreateEvent />} />
-        <Route path="/login" element={<Auth />} />
-        <Route path="/signup" element={<Auth />} />
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <div className="min-h-screen">
+        <div className="max-w-[1400px] mx-auto bg-primary-foreground min-h-screen shadow-elegant">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/create-event" element={<CreateEvent />} />
+            <Route path="/login" element={<Auth />} />
+            <Route path="/signup" element={<Auth />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </div>
     </BrowserRouter>
   </QueryClientProvider>
 );

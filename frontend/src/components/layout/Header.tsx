@@ -4,7 +4,6 @@ import { Search, User, Plus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { removeAuthToken, getAuthToken, searchUsers, User as UserType } from "@/services/api";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export function Header() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -157,10 +156,12 @@ export function Header() {
 
         {/* Search Bar */}
         <div className="flex flex-1 max-w-md mx-8">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input placeholder="Search meals, chefs, cuisine..." className="pl-10 bg-muted/50" />
-          </div>
+          {currentUser && (
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input placeholder="Search meals, chefs, cuisine..." className="pl-10 bg-muted/50" />
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
