@@ -2,18 +2,11 @@ import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail } from "lucide-react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { createUser, loginUser, setAuthToken } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -166,7 +159,7 @@ export default function Auth() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto py-4">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2">Join Dorm Made</h1>
@@ -175,7 +168,7 @@ export default function Auth() {
             </p>
           </div>
 
-          <Tabs defaultValue={defaultTab} className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full space-y-8">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
               <TabsTrigger value="login">Log In</TabsTrigger>
@@ -190,8 +183,8 @@ export default function Auth() {
                     Sign up with your university email to get started
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <form onSubmit={handleSignUp}>
+                <CardContent>
+                  <form className="space-y-4" onSubmit={handleSignUp}>
                     {/* Name Fields */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -297,8 +290,8 @@ export default function Auth() {
                   <CardTitle>Welcome Back</CardTitle>
                   <CardDescription>Sign in to your Dorm Made account</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <form onSubmit={handleLogin}>
+                <CardContent>
+                  <form className="space-y-4" onSubmit={handleLogin}>
                     <div>
                       <Label htmlFor="loginEmail">Email</Label>
                       <Input
@@ -340,17 +333,7 @@ export default function Auth() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end">
-                      <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                        Forgot password?
-                      </Link>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      className="w-full bg-gradient-to-r from-primary to-primary-glow"
-                      disabled={loading}
-                    >
+                    <Button type="submit" className="w-full mt-8" disabled={loading}>
                       {loading ? "Signing In..." : "Sign In"}
                     </Button>
                   </form>
