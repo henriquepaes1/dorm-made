@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/home/Footer";
@@ -9,9 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getUser, updateUser, uploadProfilePicture, getAuthToken, getUserEvents } from "@/services";
-import { User, Event } from "@/types";
-import { useToast } from "@/hooks/use-toast";
+import { useProfile } from "@/hooks/use-profile";
+import { useProfilePhoto } from "@/hooks/use-profile-photo";
 import {
   GraduationCap,
   User as UserIcon,
@@ -26,235 +24,34 @@ import {
   Clock,
   Users,
 } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import { User } from "@/types";
 
 export default function Profile() {
   const { userId } = useParams<{ userId: string }>();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [userEvents, setUserEvents] = useState<Event[]>([]);
-  const [loadingEvents, setLoadingEvents] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (userId) {
-      loadUser();
-    } else {
-      // Se não tiver userId, tenta usar dados do localStorage
-      const currentUserStr = localStorage.getItem("currentUser");
-      if (currentUserStr) {
-        try {
-          const currentUser = JSON.parse(currentUserStr);
-          setUser(currentUser);
-          setEditingUser({ ...currentUser });
-          loadUserEvents(currentUser.id);
-        } catch (e) {
-          console.error("Error parsing currentUser:", e);
-        }
-      }
-      setLoading(false);
-    }
-  }, [userId]);
+  const {
+    user,
+    loading,
+    isEditing,
+    editingUser,
+    saving,
+    userEvents,
+    loadingEvents,
+    setIsEditing,
+    updateEditingUser,
+    handleSave: saveProfile,
+    handleCancel,
+    isOwnProfile,
+  } = useProfile(userId);
 
-  const loadUser = async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      console.log("Loading user with ID:", userId);
-      const userData = await getUser(userId);
-      console.log("User data loaded:", userData);
-      setUser(userData);
-      setEditingUser({ ...userData });
-      // Carregar eventos após o usuário ser carregado
-      await loadUserEvents(userData.id);
-    } catch (error: any) {
-      console.error("Error loading user:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
-
-      // Se não conseguir carregar do backend, tenta usar dados do localStorage
-      const currentUserStr = localStorage.getItem("currentUser");
-      if (currentUserStr) {
-        try {
-          const currentUser = JSON.parse(currentUserStr);
-          if (currentUser.id === userId) {
-            console.log("Using user data from localStorage");
-            setUser(currentUser);
-            setEditingUser({ ...currentUser });
-            return;
-          }
-        } catch (e) {
-          console.error("Error parsing currentUser from localStorage:", e);
-        }
-      }
-
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.message ||
-        "Não foi possível carregar o perfil do usuário";
-
-      toast({
-        title: "Erro",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!editingUser || !userId) return;
-
-    try {
-      setSaving(true);
-      const updatedUser = await updateUser(userId, {
-        university: editingUser.university || null,
-        description: editingUser.description || null,
-        profile_picture: editingUser.profile_picture || null,
-      });
-
-      setUser(updatedUser);
-      setEditingUser({ ...updatedUser });
-      setIsEditing(false);
-
-      // Atualizar localStorage
-      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-
-      toast({
-        title: "Sucesso!",
-        description: "Perfil atualizado com sucesso",
-        className: "bg-green-500 text-white border-green-600",
-      });
-    } catch (error: any) {
-      console.error("Error updating user:", error);
-      toast({
-        title: "Erro",
-        description: error.response?.data?.detail || "Não foi possível atualizar o perfil",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    if (user) {
-      setEditingUser({ ...user });
-    }
-    setIsEditing(false);
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-    if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: "Erro",
-        description: "Apenas arquivos JPEG e PNG são permitidos",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size (5MB max)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      toast({
-        title: "Erro",
-        description: "O arquivo excede o limite de 5MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    handleUploadPhoto(file);
-  };
-
-  const handleUploadPhoto = async (file: File) => {
-    if (!userId && !user) return;
-
-    const targetUserId = userId || user?.id;
-    if (!targetUserId) return;
-
-    console.log("[DEBUG PROFILE] Upload iniciado:", {
-      userId: targetUserId,
-      file: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      apiBaseURL: import.meta.env.VITE_API_URL || "https://dorm-made-production.up.railway.app",
-      token: getAuthToken() ? "Present" : "Missing",
-    });
-
-    try {
-      setUploadingPhoto(true);
-      const updatedUser = await uploadProfilePicture(targetUserId, file);
-
-      setUser(updatedUser);
-      setEditingUser({ ...updatedUser });
-
-      // Atualizar localStorage
-      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-
-      toast({
-        title: "Sucesso!",
-        description: "Foto de perfil atualizada com sucesso",
-        className: "bg-green-500 text-white border-green-600",
-      });
-
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    } catch (error: any) {
-      console.error("Error uploading photo:", error);
-      toast({
-        title: "Erro",
-        description: error.response?.data?.detail || "Não foi possível fazer upload da foto",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingPhoto(false);
-    }
-  };
-
-  const loadUserEvents = async (targetUserId?: string) => {
-    const idToUse = targetUserId || userId || user?.id;
-    if (!idToUse) return;
-
-    try {
-      setLoadingEvents(true);
-      const events = await getUserEvents(idToUse);
-      setUserEvents(events);
-    } catch (error: any) {
-      console.error("Error loading user events:", error);
-      // Não mostrar toast de erro, apenas logar - pode ser que o usuário não tenha eventos
-      setUserEvents([]);
-    } finally {
-      setLoadingEvents(false);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("pt-BR", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const { uploadingPhoto, fileInputRef, handleFileSelect, handleUploadPhoto } = useProfilePhoto(
+    (updatedUser) => {
+      // Update profile hook state when photo is uploaded
+      updateEditingUser(updatedUser);
+    },
+  );
 
   const getInitials = (name: string) => {
     return name
@@ -265,17 +62,18 @@ export default function Profile() {
       .slice(0, 2);
   };
 
-  const isOwnProfile = () => {
-    const currentUserStr = localStorage.getItem("currentUser");
-    if (currentUserStr && user) {
-      try {
-        const currentUser = JSON.parse(currentUserStr);
-        return currentUser.id === user.id;
-      } catch (e) {
-        return false;
-      }
+  const handleFileSelectWrapper = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFileSelect(e);
+    const file = e.target.files?.[0];
+    if (file && userId) {
+      handleUploadPhoto(file, userId);
     }
-    return false;
+  };
+
+  const handleSaveWrapper = async () => {
+    if (userId) {
+      await saveProfile(userId);
+    }
   };
 
   if (loading) {
@@ -344,7 +142,7 @@ export default function Profile() {
                   <input
                     type="file"
                     accept="image/jpeg,image/jpg,image/png"
-                    onChange={handleFileSelect}
+                    onChange={handleFileSelectWrapper}
                     ref={fileInputRef}
                     className="hidden"
                     id="profile-photo-upload"
@@ -398,7 +196,7 @@ export default function Profile() {
                             <X className="h-4 w-4 mr-2" />
                             Cancelar
                           </Button>
-                          <Button size="sm" onClick={handleSave} disabled={saving}>
+                          <Button size="sm" onClick={handleSaveWrapper} disabled={saving}>
                             <Save className="h-4 w-4 mr-2" />
                             {saving ? "Salvando..." : "Salvar"}
                           </Button>
@@ -417,11 +215,7 @@ export default function Profile() {
                         <Input
                           id="university"
                           value={editingUser?.university || ""}
-                          onChange={(e) =>
-                            setEditingUser((prev) =>
-                              prev ? { ...prev, university: e.target.value } : null,
-                            )
-                          }
+                          onChange={(e) => updateEditingUser({ university: e.target.value })}
                           placeholder="Digite sua universidade"
                         />
                       </div>
@@ -434,11 +228,7 @@ export default function Profile() {
                         <Textarea
                           id="description"
                           value={editingUser?.description || ""}
-                          onChange={(e) =>
-                            setEditingUser((prev) =>
-                              prev ? { ...prev, description: e.target.value } : null,
-                            )
-                          }
+                          onChange={(e) => updateEditingUser({ description: e.target.value })}
                           placeholder="Conte um pouco sobre você..."
                           rows={4}
                           className="resize-none"
@@ -452,11 +242,7 @@ export default function Profile() {
                         <Input
                           id="profile_picture"
                           value={editingUser?.profile_picture || ""}
-                          onChange={(e) =>
-                            setEditingUser((prev) =>
-                              prev ? { ...prev, profile_picture: e.target.value } : null,
-                            )
-                          }
+                          onChange={(e) => updateEditingUser({ profile_picture: e.target.value })}
                           placeholder="https://exemplo.com/foto.jpg"
                           type="url"
                         />

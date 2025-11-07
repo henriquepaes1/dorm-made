@@ -69,11 +69,7 @@ export function useEvents(): UseEventsReturn {
   const refreshAllData = useCallback(async () => {
     setLoading(true);
     try {
-      await Promise.all([
-        loadAllEvents(),
-        loadMyEvents(),
-        loadJoinedEvents(),
-      ]);
+      await Promise.all([loadAllEvents(), loadMyEvents(), loadJoinedEvents()]);
     } catch (err) {
       console.error("Error refreshing events:", err);
     } finally {
@@ -83,8 +79,10 @@ export function useEvents(): UseEventsReturn {
 
   const joinEvent = useCallback(
     async (eventId: string) => {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
+      const user = JSON.parse(localStorage.getItem("currentUser"));
+
+      if (!user) {
+        console.log(localStorage.getItem("userId"));
         toast({
           title: "Authentication Required",
           description: "Please log in to join events.",
@@ -95,7 +93,7 @@ export function useEvents(): UseEventsReturn {
 
       try {
         setLoading(true);
-        await joinEventApi({ event_id: eventId, user_id: userId });
+        await joinEventApi({ event_id: eventId, user_id: user.id });
 
         toast({
           title: "Success",
@@ -105,8 +103,7 @@ export function useEvents(): UseEventsReturn {
         // Refresh all event lists to reflect the change
         await refreshAllData();
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to join event";
+        const errorMessage = err instanceof Error ? err.message : "Failed to join event";
 
         toast({
           title: "Error",
@@ -120,7 +117,7 @@ export function useEvents(): UseEventsReturn {
         setLoading(false);
       }
     },
-    [toast, refreshAllData]
+    [toast, refreshAllData],
   );
 
   return {

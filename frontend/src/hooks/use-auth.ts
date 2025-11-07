@@ -1,0 +1,150 @@
+import { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { createUser, loginUser, setAuthToken } from "@/services";
+import { useToast } from "@/hooks/use-toast";
+
+interface SignUpFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  university: string;
+}
+
+interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+interface UseAuthReturn {
+  loading: boolean;
+  signUp: (data: SignUpFormData) => Promise<void>;
+  login: (data: LoginFormData) => Promise<void>;
+}
+
+export function useAuth(): UseAuthReturn {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const signUp = useCallback(
+    async (data: SignUpFormData) => {
+      if (!data.firstName || !data.lastName || !data.email || !data.password || !data.university) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const userData = {
+          name: `${data.firstName} ${data.lastName}`,
+          email: data.email,
+          university: data.university,
+          password: data.password,
+        };
+
+        await createUser(userData);
+
+        toast({
+          title: "Success!",
+          description: "Account created successfully! Please log in to continue.",
+          className: "bg-green-500 text-white border-green-600",
+        });
+
+        navigate("/login");
+      } catch (error: any) {
+        let errorMessage = "Failed to create account";
+
+        if (error.response?.data?.detail) {
+          // Handle Pydantic validation errors
+          if (Array.isArray(error.response.data.detail)) {
+            errorMessage = error.response.data.detail.map((err: any) => err.msg).join(", ");
+          } else {
+            errorMessage = error.response.data.detail;
+          }
+        }
+
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [toast, navigate]
+  );
+
+  const login = useCallback(
+    async (data: LoginFormData) => {
+      // Validation
+      if (!data.email || !data.password) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const loginResponse = await loginUser({
+          email: data.email,
+          password: data.password,
+        });
+
+        // Store the JWT token
+        setAuthToken(loginResponse.access_token);
+
+        // Store the real user data from the backend
+        localStorage.setItem("currentUser", JSON.stringify(loginResponse.user));
+        localStorage.setItem("userEmail", loginResponse.user.email);
+
+        // Dispatch custom event to notify Header of login
+        window.dispatchEvent(new CustomEvent("userLogin"));
+
+        toast({
+          title: "Success!",
+          description: "Logged in successfully. Welcome back!",
+          className: "bg-green-500 text-white border-green-600",
+        });
+
+        navigate("/explore");
+      } catch (error: any) {
+        let errorMessage = "Failed to log in";
+
+        if (error.response?.data?.detail) {
+          // Handle Pydantic validation errors
+          if (Array.isArray(error.response.data.detail)) {
+            errorMessage = error.response.data.detail.map((err: any) => err.msg).join(", ");
+          } else {
+            errorMessage = error.response.data.detail;
+          }
+        }
+
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [toast, navigate]
+  );
+
+  return {
+    loading,
+    signUp,
+    login,
+  };
+}
