@@ -6,36 +6,82 @@ A meal sharing platform where students create events and others can join them.
 
 The application uses Supabase with three tables:
 
+## Database Schema
+
+### Users Table
+
+- `id` (Primary Key)
+- `name` (String)
+- `email` (String)
+- `university` (String)
+- `created_at` (Timestamp)
+
+### Recipes Table
+
+- `id` (Primary Key)
+- `user_id` (Foreign Key to Users)
+- `title` (String)
+- `description` (String)
+- `ingredients` (Array of Strings)
+- `instructions` (String)
+- `prep_time` (Integer - minutes)
+- `created_at` (Timestamp)
+
+### Events Table
+
+- `id` (Primary Key)
+- `host_user_id` (Foreign Key to Users)
+- `recipe_id` (Foreign Key to Recipes)
+- `title` (String)
+- `description` (String)
+- `max_participants` (Integer)
+- `current_participants` (Integer)
+- `event_date` (Timestamp)
+- `location` (String)
+- `created_at` (Timestamp)
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+pip install -r requirements.txt
 ### `users`
 ```
-id                  UUID (primary key, auto-generated)
-name                TEXT
-email               TEXT
-university          TEXT
-hashed_password     TEXT
-created_at          TIMESTAMP (auto-generated)
+
+id UUID (primary key, auto-generated)
+name TEXT
+email TEXT
+university TEXT
+hashed_password TEXT
+created_at TIMESTAMP (auto-generated)
+
 ```
 
 ### `events`
 ```
-id                      UUID (primary key, auto-generated)
-title                   TEXT
-description             TEXT
-max_participants        INTEGER
-location                TEXT
-event_date              TIMESTAMP
-host_user_id            UUID (foreign key → users.id)
-current_participants    INTEGER
-created_at              TIMESTAMP (auto-generated)
+
+id UUID (primary key, auto-generated)
+title TEXT
+description TEXT
+max_participants INTEGER
+location TEXT
+event_date TIMESTAMP
+host_user_id UUID (foreign key → users.id)
+current_participants INTEGER
+created_at TIMESTAMP (auto-generated)
+
 ```
 
 ### `events_participants`
 ```
-id                  UUID (primary key, auto-generated)
-event_id            UUID (foreign key → events.id)
-participant_id      UUID (foreign key → users.id)
-joined_at           TIMESTAMP (auto-generated)
-```
+
+id UUID (primary key, auto-generated)
+event_id UUID (foreign key → events.id)
+participant_id UUID (foreign key → users.id)
+joined_at TIMESTAMP (auto-generated)
+
+````
 
 ## User Flows
 
@@ -56,7 +102,7 @@ joined_at           TIMESTAMP (auto-generated)
 - User must be logged in
 - User fills form: title, description, max_participants, location, event_date
 - Frontend: `POST /events/` with event data + JWT token in header
-- Backend: 
+- Backend:
   - Verifies JWT token, extracts `userId`
   - Sets `host_user_id = userId`
   - Sets `current_participants = 0`
@@ -124,26 +170,31 @@ export SECRET_KEY="your-secret-key"
 # Run
 cd backend
 python main.py
-```
+````
+
 Backend runs on `http://localhost:8000`
 
 **Frontend:**
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
 Frontend runs on `http://localhost:8080`
 
 ## Tech Stack
 
 **Backend:**
+
 - FastAPI - Web framework
 - Supabase Python client - Database access
 - PyJWT - JWT token creation/verification
 - bcrypt - Password hashing
 
 **Frontend:**
+
 - React 18 + TypeScript
 - Vite - Build tool
 - Tailwind CSS + shadcn/ui - Styling
@@ -151,20 +202,42 @@ Frontend runs on `http://localhost:8080`
 - React Router - Client-side routing
 
 **Database:**
+
 - Supabase (managed PostgreSQL)
 
 ## Configuration
 
 **Backend `.env`:**
+
 ```
 SUPABASE_URL=your-supabase-project-url
 SUPABASE_KEY=your-supabase-anon-key
 SECRET_KEY=random-string-for-jwt-signing
 ```
 
+<<<<<<< HEAD
+
+### Create a Recipe
+
+```bash
+curl -X POST "http://localhost:8000/recipes/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": 1,
+    "title": "Pasta Carbonara",
+    "description": "Classic Italian pasta dish",
+    "ingredients": ["pasta", "eggs", "bacon", "parmesan"],
+    "instructions": "Cook pasta, mix with eggs and bacon...",
+    "prep_time": 30,
+  }'
+=======
 **Frontend `.env`:**
 ```
+
 VITE_API_URL=http://localhost:8000
+
+> > > > > > > main
+
 ```
 
 ## Technical Details
@@ -193,3 +266,4 @@ VITE_API_URL=http://localhost:8000
 **Data Validation:**
 - Pydantic schemas validate request/response data
 - Frontend does basic validation before sending requests
+```

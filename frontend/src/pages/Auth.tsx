@@ -2,74 +2,79 @@ import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Mail } from "lucide-react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { createUser, loginUser, setAuthToken } from "@/services/api";
+import { Eye, EyeOff } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { createUser, loginUser, setAuthToken } from "@/services";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    university: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    university: "",
   });
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Determine which tab to show based on the current route
-  const defaultTab = location.pathname === '/login' ? 'login' : 'signup';
+  const defaultTab = location.pathname === "/login" ? "login" : "signup";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.university) {
+
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.password ||
+      !formData.university
+    ) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
-    
+
     try {
       const userData = {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         university: formData.university,
-        password: formData.password
+        password: formData.password,
       };
 
       const user = await createUser(userData);
-      
+
       toast({
         title: "Success!",
         description: "Account created successfully! Please log in to continue.",
         className: "bg-green-500 text-white border-green-600",
       });
-      
-      navigate('/login');
+
+      navigate("/login");
     } catch (error: any) {
       let errorMessage = "Failed to create account";
-      
+
       if (error.response?.data?.detail) {
         // Handle Pydantic validation errors
         if (Array.isArray(error.response.data.detail)) {
@@ -78,11 +83,11 @@ export default function Auth() {
           errorMessage = error.response.data.detail;
         }
       }
-      
+
       toast({
         title: "Error",
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -91,48 +96,46 @@ export default function Auth() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.email || !formData.password) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
-    
+
     try {
       const loginData = {
         email: formData.email,
-        password: formData.password
+        password: formData.password,
       };
 
       const loginResponse = await loginUser(loginData);
-      
+
       // Store the JWT token
       setAuthToken(loginResponse.access_token);
-      
+
       // Store the real user data from the backend
-      localStorage.setItem('currentUser', JSON.stringify(loginResponse.user));
-      localStorage.setItem('userEmail', loginResponse.user.email);
-      
+      localStorage.setItem("currentUser", JSON.stringify(loginResponse.user));
+      localStorage.setItem("userEmail", loginResponse.user.email);
+
       // Dispatch custom event to notify Header of login
-      window.dispatchEvent(new CustomEvent('userLogin'));
-      
+      window.dispatchEvent(new CustomEvent("userLogin"));
+
       toast({
         title: "Success!",
         description: "Logged in successfully. Welcome back!",
         className: "bg-green-500 text-white border-green-600",
       });
-      
-      console.log("Navigating to profile:", `/profile/${loginResponse.user.id}`);
-      console.log("User ID:", loginResponse.user.id);
-      navigate(`/profile/${loginResponse.user.id}`);
+
+      navigate("/explore");
     } catch (error: any) {
       let errorMessage = "Failed to log in";
-      
+
       if (error.response?.data?.detail) {
         // Handle Pydantic validation errors
         if (Array.isArray(error.response.data.detail)) {
@@ -141,11 +144,11 @@ export default function Auth() {
           errorMessage = error.response.data.detail;
         }
       }
-      
+
       toast({
         title: "Error",
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -155,8 +158,8 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      <main className="container mx-auto px-4 py-12">
+
+      <main className="container mx-auto py-4">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2">Join Dorm Made</h1>
@@ -165,7 +168,7 @@ export default function Auth() {
             </p>
           </div>
 
-          <Tabs defaultValue={defaultTab} className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full space-y-8">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
               <TabsTrigger value="login">Log In</TabsTrigger>
@@ -180,29 +183,29 @@ export default function Auth() {
                     Sign up with your university email to get started
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <form onSubmit={handleSignUp}>
+                <CardContent>
+                  <form className="space-y-4" onSubmit={handleSignUp}>
                     {/* Name Fields */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">First Name</Label>
-                        <Input 
-                          id="firstName" 
+                        <Input
+                          id="firstName"
                           name="firstName"
                           value={formData.firstName}
                           onChange={handleInputChange}
-                          placeholder="John" 
+                          placeholder="John"
                           required
                         />
                       </div>
                       <div>
                         <Label htmlFor="lastName">Last Name</Label>
-                        <Input 
-                          id="lastName" 
+                        <Input
+                          id="lastName"
                           name="lastName"
                           value={formData.lastName}
                           onChange={handleInputChange}
-                          placeholder="Doe" 
+                          placeholder="Doe"
                           required
                         />
                       </div>
@@ -211,14 +214,14 @@ export default function Auth() {
                     {/* Email */}
                     <div>
                       <Label htmlFor="email">University Email</Label>
-                      <Input 
-                        id="email" 
+                      <Input
+                        id="email"
                         name="email"
-                        type="email" 
+                        type="email"
                         value={formData.email}
                         onChange={handleInputChange}
                         placeholder="john.doe@university.edu"
-                        className="bg-background" 
+                        className="bg-background"
                         required
                       />
                       <p className="text-xs text-muted-foreground mt-1">
@@ -229,12 +232,12 @@ export default function Auth() {
                     {/* University */}
                     <div>
                       <Label htmlFor="university">University</Label>
-                      <Input 
-                        id="university" 
+                      <Input
+                        id="university"
                         name="university"
                         value={formData.university}
                         onChange={handleInputChange}
-                        placeholder="University of Example" 
+                        placeholder="University of Example"
                         required
                       />
                     </div>
@@ -243,7 +246,7 @@ export default function Auth() {
                     <div>
                       <Label htmlFor="password">Password</Label>
                       <div className="relative">
-                        <Input 
+                        <Input
                           id="password"
                           name="password"
                           type={showPassword ? "text" : "password"}
@@ -268,9 +271,8 @@ export default function Auth() {
                       </div>
                     </div>
 
-
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full bg-gradient-to-r from-primary to-primary-glow"
                       disabled={loading}
                     >
@@ -286,29 +288,27 @@ export default function Auth() {
               <Card>
                 <CardHeader>
                   <CardTitle>Welcome Back</CardTitle>
-                  <CardDescription>
-                    Sign in to your Dorm Made account
-                  </CardDescription>
+                  <CardDescription>Sign in to your Dorm Made account</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <form onSubmit={handleLogin}>
+                <CardContent>
+                  <form className="space-y-4" onSubmit={handleLogin}>
                     <div>
                       <Label htmlFor="loginEmail">Email</Label>
-                      <Input 
-                        id="loginEmail" 
+                      <Input
+                        id="loginEmail"
                         name="email"
-                        type="email" 
+                        type="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="your.email@university.edu" 
+                        placeholder="your.email@university.edu"
                         required
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="loginPassword">Password</Label>
                       <div className="relative">
-                        <Input 
+                        <Input
                           id="loginPassword"
                           name="password"
                           type={showPassword ? "text" : "password"}
@@ -333,17 +333,7 @@ export default function Auth() {
                       </div>
                     </div>
 
-                  <div className="flex items-center justify-end">
-                    <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                      Forgot password?
-                    </Link>
-                  </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-gradient-to-r from-primary to-primary-glow"
-                      disabled={loading}
-                    >
+                    <Button type="submit" className="w-full mt-8" disabled={loading}>
                       {loading ? "Signing In..." : "Sign In"}
                     </Button>
                   </form>

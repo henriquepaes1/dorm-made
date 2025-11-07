@@ -9,10 +9,23 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getUser, updateUser, uploadProfilePicture, getAuthToken, getUserEvents } from "@/services/api";
-import { User, Event } from "@/services/api";
+import { getUser, updateUser, uploadProfilePicture, getAuthToken, getUserEvents } from "@/services";
+import { User, Event } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, User as UserIcon, ArrowLeft, UtensilsCrossed, Edit2, Save, X, Upload, Image as ImageIcon, MapPin, Clock, Users } from "lucide-react";
+import {
+  GraduationCap,
+  User as UserIcon,
+  ArrowLeft,
+  UtensilsCrossed,
+  Edit2,
+  Save,
+  X,
+  Upload,
+  Image as ImageIcon,
+  MapPin,
+  Clock,
+  Users,
+} from "lucide-react";
 
 export default function Profile() {
   const { userId } = useParams<{ userId: string }>();
@@ -33,7 +46,7 @@ export default function Profile() {
       loadUser();
     } else {
       // Se não tiver userId, tenta usar dados do localStorage
-      const currentUserStr = localStorage.getItem('currentUser');
+      const currentUserStr = localStorage.getItem("currentUser");
       if (currentUserStr) {
         try {
           const currentUser = JSON.parse(currentUserStr);
@@ -50,7 +63,7 @@ export default function Profile() {
 
   const loadUser = async () => {
     if (!userId) return;
-    
+
     try {
       setLoading(true);
       console.log("Loading user with ID:", userId);
@@ -64,9 +77,9 @@ export default function Profile() {
       console.error("Error loading user:", error);
       console.error("Error response:", error.response?.data);
       console.error("Error status:", error.response?.status);
-      
+
       // Se não conseguir carregar do backend, tenta usar dados do localStorage
-      const currentUserStr = localStorage.getItem('currentUser');
+      const currentUserStr = localStorage.getItem("currentUser");
       if (currentUserStr) {
         try {
           const currentUser = JSON.parse(currentUserStr);
@@ -80,15 +93,16 @@ export default function Profile() {
           console.error("Error parsing currentUser from localStorage:", e);
         }
       }
-      
-      const errorMessage = error.response?.data?.detail 
-        || error.message 
-        || "Não foi possível carregar o perfil do usuário";
-      
+
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Não foi possível carregar o perfil do usuário";
+
       toast({
         title: "Erro",
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -105,14 +119,14 @@ export default function Profile() {
         description: editingUser.description || null,
         profile_picture: editingUser.profile_picture || null,
       });
-      
+
       setUser(updatedUser);
       setEditingUser({ ...updatedUser });
       setIsEditing(false);
-      
+
       // Atualizar localStorage
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      
+      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+
       toast({
         title: "Sucesso!",
         description: "Perfil atualizado com sucesso",
@@ -123,7 +137,7 @@ export default function Profile() {
       toast({
         title: "Erro",
         description: error.response?.data?.detail || "Não foi possível atualizar o perfil",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setSaving(false);
@@ -142,12 +156,12 @@ export default function Profile() {
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Erro",
         description: "Apenas arquivos JPEG e PNG são permitidos",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -158,7 +172,7 @@ export default function Profile() {
       toast({
         title: "Erro",
         description: "O arquivo excede o limite de 5MB",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -172,25 +186,25 @@ export default function Profile() {
     const targetUserId = userId || user?.id;
     if (!targetUserId) return;
 
-    console.log('[DEBUG PROFILE] Upload iniciado:', {
+    console.log("[DEBUG PROFILE] Upload iniciado:", {
       userId: targetUserId,
       file: file.name,
       fileSize: file.size,
       fileType: file.type,
-      apiBaseURL: import.meta.env.VITE_API_URL || 'https://dorm-made-production.up.railway.app',
-      token: getAuthToken() ? 'Present' : 'Missing'
+      apiBaseURL: import.meta.env.VITE_API_URL || "https://dorm-made-production.up.railway.app",
+      token: getAuthToken() ? "Present" : "Missing",
     });
 
     try {
       setUploadingPhoto(true);
       const updatedUser = await uploadProfilePicture(targetUserId, file);
-      
+
       setUser(updatedUser);
       setEditingUser({ ...updatedUser });
-      
+
       // Atualizar localStorage
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      
+      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+
       toast({
         title: "Sucesso!",
         description: "Foto de perfil atualizada com sucesso",
@@ -199,14 +213,14 @@ export default function Profile() {
 
       // Reset file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     } catch (error: any) {
       console.error("Error uploading photo:", error);
       toast({
         title: "Erro",
         description: error.response?.data?.detail || "Não foi possível fazer upload da foto",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setUploadingPhoto(false);
@@ -232,13 +246,13 @@ export default function Profile() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -252,7 +266,7 @@ export default function Profile() {
   };
 
   const isOwnProfile = () => {
-    const currentUserStr = localStorage.getItem('currentUser');
+    const currentUserStr = localStorage.getItem("currentUser");
     if (currentUserStr && user) {
       try {
         const currentUser = JSON.parse(currentUserStr);
@@ -304,15 +318,11 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="mb-6"
-          >
+          <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
@@ -325,10 +335,7 @@ export default function Profile() {
                 <div className="relative">
                   <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-lg">
                     {editingUser?.profile_picture ? (
-                      <AvatarImage 
-                        src={editingUser.profile_picture} 
-                        alt={user.name}
-                      />
+                      <AvatarImage src={editingUser.profile_picture} alt={user.name} />
                     ) : null}
                     <AvatarFallback className="text-3xl md:text-4xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
                       {getInitials(user.name)}
@@ -362,9 +369,7 @@ export default function Profile() {
                 {/* User Info */}
                 <div className="flex-1 w-full">
                   <div className="flex items-start justify-between mb-4">
-                    <h1 className="text-3xl md:text-4xl font-bold">
-                      {user.name}
-                    </h1>
+                    <h1 className="text-3xl md:text-4xl font-bold">{user.name}</h1>
                     <div className="flex gap-2 ml-4">
                       {!isEditing ? (
                         <>
@@ -377,11 +382,7 @@ export default function Profile() {
                             <ImageIcon className="h-4 w-4 mr-2" />
                             {uploadingPhoto ? "Enviando..." : "Upload Photo"}
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsEditing(true)}
-                          >
+                          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                             <Edit2 className="h-4 w-4 mr-2" />
                             Editar
                           </Button>
@@ -397,11 +398,7 @@ export default function Profile() {
                             <X className="h-4 w-4 mr-2" />
                             Cancelar
                           </Button>
-                          <Button
-                            size="sm"
-                            onClick={handleSave}
-                            disabled={saving}
-                          >
+                          <Button size="sm" onClick={handleSave} disabled={saving}>
                             <Save className="h-4 w-4 mr-2" />
                             {saving ? "Salvando..." : "Salvar"}
                           </Button>
@@ -409,7 +406,7 @@ export default function Profile() {
                       )}
                     </div>
                   </div>
-                  
+
                   {isEditing ? (
                     <div className="space-y-4">
                       <div>
@@ -420,7 +417,11 @@ export default function Profile() {
                         <Input
                           id="university"
                           value={editingUser?.university || ""}
-                          onChange={(e) => setEditingUser(prev => prev ? { ...prev, university: e.target.value } : null)}
+                          onChange={(e) =>
+                            setEditingUser((prev) =>
+                              prev ? { ...prev, university: e.target.value } : null,
+                            )
+                          }
                           placeholder="Digite sua universidade"
                         />
                       </div>
@@ -433,7 +434,11 @@ export default function Profile() {
                         <Textarea
                           id="description"
                           value={editingUser?.description || ""}
-                          onChange={(e) => setEditingUser(prev => prev ? { ...prev, description: e.target.value } : null)}
+                          onChange={(e) =>
+                            setEditingUser((prev) =>
+                              prev ? { ...prev, description: e.target.value } : null,
+                            )
+                          }
                           placeholder="Conte um pouco sobre você..."
                           rows={4}
                           className="resize-none"
@@ -447,7 +452,11 @@ export default function Profile() {
                         <Input
                           id="profile_picture"
                           value={editingUser?.profile_picture || ""}
-                          onChange={(e) => setEditingUser(prev => prev ? { ...prev, profile_picture: e.target.value } : null)}
+                          onChange={(e) =>
+                            setEditingUser((prev) =>
+                              prev ? { ...prev, profile_picture: e.target.value } : null,
+                            )
+                          }
                           placeholder="https://exemplo.com/foto.jpg"
                           type="url"
                         />
@@ -473,9 +482,7 @@ export default function Profile() {
                               <UserIcon className="h-4 w-4 mr-2" />
                               Sobre
                             </div>
-                            <p className="text-foreground leading-relaxed">
-                              {user.description}
-                            </p>
+                            <p className="text-foreground leading-relaxed">{user.description}</p>
                           </div>
                         </>
                       ) : (
@@ -498,13 +505,9 @@ export default function Profile() {
                   <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary-glow/20 flex items-center justify-center">
                     <UtensilsCrossed className="h-5 w-5 text-primary" />
                   </div>
-                  <h2 className="text-2xl font-bold">
-                    {isOwnProfile() ? "My Meals" : "Meals"}
-                  </h2>
+                  <h2 className="text-2xl font-bold">{isOwnProfile() ? "My Meals" : "Meals"}</h2>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Eventos criados por {user.name}
-                </p>
+                <p className="text-sm text-muted-foreground">Eventos criados por {user.name}</p>
               </div>
 
               {loadingEvents ? (
@@ -519,11 +522,11 @@ export default function Profile() {
                   <div className="text-4xl mb-4">🍽️</div>
                   <h3 className="text-lg font-semibold mb-2">Nenhum evento criado ainda</h3>
                   <p className="text-muted-foreground mb-4">
-                    {user.id === JSON.parse(localStorage.getItem('currentUser') || '{}')?.id 
+                    {user.id === JSON.parse(localStorage.getItem("currentUser") || "{}")?.id
                       ? "Crie seu primeiro evento culinário para começar!"
                       : `${user.name} ainda não criou nenhum evento.`}
                   </p>
-                  {user.id === JSON.parse(localStorage.getItem('currentUser') || '{}')?.id && (
+                  {user.id === JSON.parse(localStorage.getItem("currentUser") || "{}")?.id && (
                     <Button asChild>
                       <Link to="/create-event">Criar Evento</Link>
                     </Button>
@@ -532,7 +535,10 @@ export default function Profile() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {userEvents.map((event) => (
-                    <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                    <Card
+                      key={event.id}
+                      className="overflow-hidden hover:shadow-lg transition-shadow"
+                    >
                       <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
                         {event.image_url ? (
                           <img
@@ -552,7 +558,7 @@ export default function Profile() {
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                           {event.description}
                         </p>
-                        
+
                         <div className="space-y-2">
                           <div className="flex items-center text-sm text-muted-foreground">
                             <Clock className="h-4 w-4 mr-2" />
@@ -574,30 +580,6 @@ export default function Profile() {
               )}
             </CardContent>
           </Card>
-
-          {/* Explore Meals Link */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-primary-glow/20 flex items-center justify-center">
-                    <UtensilsCrossed className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Explore Meals</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Descubra refeições incríveis criadas por outros usuários
-                    </p>
-                  </div>
-                </div>
-                <Button asChild size="lg">
-                  <Link to="/explore">
-                    Explorar
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </main>
 
@@ -605,4 +587,3 @@ export default function Profile() {
     </div>
   );
 }
-

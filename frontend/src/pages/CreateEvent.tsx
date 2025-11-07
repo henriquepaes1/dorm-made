@@ -6,19 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Calendar, MapPin, Users, Upload, X } from "lucide-react";
+import { Calendar, Upload, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createEvent, getAuthToken } from "@/services/api";
+import { createEvent, getAuthToken } from "@/services";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CreateEvent() {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    max_participants: '',
-    event_date: '',
-    location: '',
-    price: ''
+    title: "",
+    description: "",
+    max_participants: "",
+    event_date: "",
+    location: "",
+    price: "",
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -29,23 +29,23 @@ export default function CreateEvent() {
   // Check if user is logged in on component mount
   React.useEffect(() => {
     const token = getAuthToken();
-    const user = localStorage.getItem('currentUser');
-    
+    const user = localStorage.getItem("currentUser");
+
     if (!token || !user) {
       toast({
         title: "Authentication Required",
         description: "Please log in to create events",
-        variant: "destructive"
+        variant: "destructive",
       });
-      navigate('/login');
+      navigate("/login");
     }
   }, [navigate, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -54,12 +54,12 @@ export default function CreateEvent() {
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Invalid file type",
         description: "Please select a JPEG, PNG, or WebP image",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -69,7 +69,7 @@ export default function CreateEvent() {
       toast({
         title: "File too large",
         description: "Image size must be less than 5MB",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -91,32 +91,34 @@ export default function CreateEvent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const currentUser = localStorage.getItem('currentUser');
+
+    const currentUser = localStorage.getItem("currentUser");
     if (!currentUser) {
       toast({
         title: "Please Sign In",
         description: "You need to sign in to create events",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     // Validate required fields
-    const requiredFields = ['title', 'description', 'max_participants', 'event_date', 'location'];
-    
-    const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
+    const requiredFields = ["title", "description", "max_participants", "event_date", "location"];
+
+    const missingFields = requiredFields.filter(
+      (field) => !formData[field as keyof typeof formData],
+    );
     if (missingFields.length > 0) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
-    
+
     try {
       // Check if user has a valid token
       const token = getAuthToken();
@@ -124,55 +126,55 @@ export default function CreateEvent() {
         toast({
           title: "Authentication Required",
           description: "Please log in to create events",
-          variant: "destructive"
+          variant: "destructive",
         });
-        navigate('/login');
+        navigate("/login");
         return;
       }
 
       // Create FormData to handle both text fields and image upload
       const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('max_participants', formData.max_participants);
-      formDataToSend.append('event_date', formData.event_date);
-      formDataToSend.append('location', formData.location);
-      
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("max_participants", formData.max_participants);
+      formDataToSend.append("event_date", formData.event_date);
+      formDataToSend.append("location", formData.location);
+
       // Add price if provided
-      if (formData.price && formData.price.trim() !== '') {
-        formDataToSend.append('price', formData.price);
+      if (formData.price && formData.price.trim() !== "") {
+        formDataToSend.append("price", formData.price);
       }
 
       // Add image if selected
       if (selectedImage) {
-        formDataToSend.append('image', selectedImage);
+        formDataToSend.append("image", selectedImage);
       }
 
-      console.log('Creating event with FormData');
-      console.log('Using token:', token ? 'Token present' : 'No token');
-      console.log('Image attached:', selectedImage ? 'Yes' : 'No');
+      console.log("Creating event with FormData");
+      console.log("Using token:", token ? "Token present" : "No token");
+      console.log("Image attached:", selectedImage ? "Yes" : "No");
 
       await createEvent(formDataToSend);
-      
-      console.log('Event created successfully, redirecting to explore...');
-      
+
+      console.log("Event created successfully, redirecting to explore...");
+
       toast({
         title: "Success!",
         description: "Event created successfully!",
         className: "bg-green-500 text-white border-green-600",
       });
-      
-      navigate('/explore');
+
+      navigate("/explore");
     } catch (error: any) {
-      console.error('CreateEvent error:', error);
-      console.error('Error response:', error.response);
-      console.error('Error status:', error.response?.status);
-      console.error('Error data:', error.response?.data);
-      
+      console.error("CreateEvent error:", error);
+      console.error("Error response:", error.response);
+      console.error("Error status:", error.response?.status);
+      console.error("Error data:", error.response?.data);
+
       toast({
         title: "Error",
         description: error.response?.data?.detail || "Failed to create event",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -182,7 +184,7 @@ export default function CreateEvent() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
@@ -200,14 +202,12 @@ export default function CreateEvent() {
                   <Calendar className="mr-2 h-5 w-5" />
                   Event Details
                 </CardTitle>
-                <CardDescription>
-                  Tell us about your culinary event
-                </CardDescription>
+                <CardDescription>Tell us about your culinary event</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid-cols-2 gap-6">
                   {/* Event Title */}
-                  <div className="md:col-span-2">
+                  <div className="col-span-2">
                     <Label htmlFor="title">Event Title</Label>
                     <Input
                       id="title"
@@ -220,7 +220,7 @@ export default function CreateEvent() {
                   </div>
 
                   {/* Event Description */}
-                  <div className="md:col-span-2">
+                  <div className="col-span-2">
                     <Label htmlFor="description">Event Description</Label>
                     <Textarea
                       id="description"
@@ -280,7 +280,7 @@ export default function CreateEvent() {
                   </div>
 
                   {/* Location */}
-                  <div className="md:col-span-2">
+                  <div className="col-span-2">
                     <Label htmlFor="location">Location</Label>
                     <Input
                       id="location"
@@ -313,9 +313,7 @@ export default function CreateEvent() {
                           <p className="text-sm font-medium text-gray-700 mb-1">
                             Click to upload event image
                           </p>
-                          <p className="text-xs text-gray-500">
-                            JPEG, PNG or WebP (max. 5MB)
-                          </p>
+                          <p className="text-xs text-gray-500">JPEG, PNG or WebP (max. 5MB)</p>
                         </label>
                       </div>
                     ) : (
@@ -341,22 +339,17 @@ export default function CreateEvent() {
               </CardContent>
             </Card>
 
-
             {/* Submit Buttons */}
             <div className="flex gap-4 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate('/explore')}
+                onClick={() => navigate("/explore")}
                 className="flex-1"
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="flex-1"
-              >
+              <Button type="submit" disabled={loading} className="flex-1">
                 {loading ? "Creating Event..." : "Create Event"}
               </Button>
             </div>

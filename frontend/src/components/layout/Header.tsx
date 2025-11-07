@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, User, Plus } from "lucide-react";
+import { User, CalendarPlus, CalendarSearch, UserIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { removeAuthToken, getAuthToken, searchUsers, User as UserType } from "@/services/api";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { removeAuthToken, getAuthToken, searchUsers } from "@/services";
+import { User as UserType } from "@/types";
 
 export function Header() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -18,24 +17,21 @@ export function Header() {
 
   useEffect(() => {
     const checkAuth = () => {
-      const user = localStorage.getItem('currentUser');
+      const user = localStorage.getItem("currentUser");
       const token = getAuthToken();
-      
-      console.log('Header checkAuth - user:', user ? 'present' : 'null');
-      console.log('Header checkAuth - token:', token ? 'present' : 'null');
-      
+
       // Only set user if both user data and token exist
-      if (user && token && user !== 'undefined') {
+      if (user && token && user !== "undefined") {
         try {
           const parsedUser = JSON.parse(user);
-          console.log('Header checkAuth - parsed user:', parsedUser);
+          console.log("Header checkAuth - parsed user:", parsedUser);
           setCurrentUser(parsedUser);
         } catch (error) {
-          console.error('Error parsing user data:', error);
+          console.error("Error parsing user data:", error);
           setCurrentUser(null);
         }
       } else {
-        console.log('Header checkAuth - setting user to null');
+        console.log("Header checkAuth - setting user to null");
         setCurrentUser(null);
       }
     };
@@ -44,14 +40,14 @@ export function Header() {
     checkAuth();
 
     // Listen for storage changes (when user logs in from another tab)
-    window.addEventListener('storage', checkAuth);
-    
+    window.addEventListener("storage", checkAuth);
+
     // Listen for custom login event
-    window.addEventListener('userLogin', checkAuth);
+    window.addEventListener("userLogin", checkAuth);
 
     return () => {
-      window.removeEventListener('storage', checkAuth);
-      window.removeEventListener('userLogin', checkAuth);
+      window.removeEventListener("storage", checkAuth);
+      window.removeEventListener("userLogin", checkAuth);
     };
   }, []);
 
@@ -67,23 +63,26 @@ export function Header() {
   useEffect(() => {
     // Close search when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
         setIsSearchOpen(false);
       }
     };
 
     if (isSearchOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isSearchOpen]);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    
+
     // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -105,7 +104,7 @@ export function Header() {
         setIsSearchOpen(results.length > 0);
         setIsSearching(false);
       } catch (error) {
-        console.error('Error searching users:', error);
+        console.error("Error searching users:", error);
         setSearchResults([]);
         setIsSearchOpen(false);
         setIsSearching(false);
@@ -137,11 +136,11 @@ export function Header() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('userEmail');
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("userEmail");
     removeAuthToken();
     setCurrentUser(null);
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   return (
@@ -155,99 +154,34 @@ export function Header() {
           <span className="font-bold text-xl text-foreground">Dorm Made</span>
         </Link>
 
-        {/* Search Bar - Hidden on mobile */}
-        <div className="hidden md:flex flex-1 max-w-md mx-8" ref={searchContainerRef}>
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
-            <Input
-              placeholder="Buscar usuários..."
-              className="pl-10 bg-muted/50"
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              onFocus={() => {
-                if (searchResults.length > 0) {
-                  setIsSearchOpen(true);
-                }
-              }}
-            />
-            
-            {/* Search Results Dropdown */}
-            {isSearchOpen && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-popover border rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
-                {isSearching ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    Buscando...
-                  </div>
-                ) : searchResults.length > 0 ? (
-                  <div className="py-2">
-                    {searchResults.map((user) => (
-                      <button
-                        key={user.id}
-                        onClick={() => handleUserSelect(user.id)}
-                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-accent transition-colors text-left"
-                      >
-                        <Avatar className="h-10 w-10">
-                          {user.profile_picture ? (
-                            <AvatarImage 
-                              src={user.profile_picture} 
-                              alt={user.name}
-                            />
-                          ) : null}
-                          <AvatarFallback className="bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
-                            {getInitials(user.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">
-                            {user.name}
-                          </div>
-                          {user.university && (
-                            <div className="text-xs text-muted-foreground truncate">
-                              {user.university}
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
-                    Nenhum usuário encontrado
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Navigation */}
         <nav className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link 
-              to={searchQuery.trim().length >= 2 ? `/explore?search=${encodeURIComponent(searchQuery.trim())}` : "/explore"}
-              onClick={handleExploreClick}
-            >
-              <Search className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Explore</span>
-            </Link>
-          </Button>
-          
           {currentUser && (
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/create-event">
-                <Plus className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Host Event</span>
-              </Link>
-            </Button>
+            <div className="flex flex-row">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/create-event">
+                  <CalendarPlus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Host event</span>
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/explore">
+                  <CalendarSearch className="h-4 w-4" />
+                  <span className="hidden sm:inline">Explore events</span>
+                </Link>
+              </Button>
+            </div>
           )}
 
-          
           {currentUser ? (
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground hidden sm:inline">
-                Welcome, {currentUser.name.split(' ')[0]}!
-              </span>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="outline" size="sm" asChild className="ml-4">
+                <Link to={`/profile/${currentUser.id}`}>
+                  <UserIcon className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Profile</span>
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
                 Logout
               </Button>
             </div>

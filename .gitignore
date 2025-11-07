@@ -1,6 +1,7 @@
 # Environment variables
 env
 **/.env
+**/.venv
 
 # Node.js
 **/node_modules
