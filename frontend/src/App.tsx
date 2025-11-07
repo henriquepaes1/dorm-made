@@ -18,6 +18,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/create-event" element={<CreateEvent />} />
+            <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/login" element={<Auth />} />
             <Route path="/signup" element={<Auth />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
