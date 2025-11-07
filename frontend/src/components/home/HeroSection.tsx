@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { getAuthToken } from "@/services/api";
-import { Users } from "lucide-react";
+import { getAuthToken } from "@/services";
+import { Users, Utensils } from "lucide-react";
 
 export function HeroSection() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export function HeroSection() {
   const handleBecomeChef = () => {
     const token = getAuthToken();
     if (token) {
-      navigate("/explore");
+      navigate("/create-event");
     } else {
       navigate("/login");
     }
@@ -43,9 +43,18 @@ export function HeroSection() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" variant="outline" className="min-w-[180px]">
+            <Button
+              size="lg"
+              variant="default"
+              className="min-w-[180px]"
+              onClick={handleBecomeChef}
+            >
               <Users className="mr-2 h-5 w-5" />
               <Link to={`/login`}>Start hosting meals</Link>
+            </Button>
+            <Button size="lg" variant="outline" className="min-w-[180px]" onClick={handleFindMeals}>
+              <Utensils className="mr-2 h-5 w-5" />
+              Find Meals
             </Button>
           </div>
         </div>

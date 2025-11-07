@@ -1,7 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 export function Footer() {
   return (

@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Calendar, MapPin, Users, Upload, X } from "lucide-react";
+import { Calendar, Upload, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createEvent, getAuthToken } from "@/services/api";
+import { createEvent, getAuthToken } from "@/services";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CreateEvent() {

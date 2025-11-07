@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { createUser, loginUser, setAuthToken } from "@/services/api";
+import { createUser, loginUser, setAuthToken } from "@/services";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {

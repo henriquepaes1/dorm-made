@@ -1,4 +1,4 @@
-import React from "react";
+import { formatDate } from "@/lib/utils";
 
 function EventsList({ events, loading, onJoinEvent, currentUser }) {
   if (loading) {
@@ -13,18 +13,6 @@ function EventsList({ events, loading, onJoinEvent, currentUser }) {
       </div>
     );
   }
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   return (
     <div>

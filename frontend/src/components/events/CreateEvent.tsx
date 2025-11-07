@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { createEvent, getUserRecipes } from "../services/api";
+import { createEvent, getUserRecipes } from "@/services";
+import { useState, useEffect } from "react";
 
 function CreateEvent({ currentUser, onEventCreated }) {
   const [formData, setFormData] = useState({

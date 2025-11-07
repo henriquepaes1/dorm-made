@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { createUser } from "../services/api";
+import { createUser } from "@/services/user.service";
+import { useState } from "react";
 
 function UserRegistration({ onUserRegistered }) {
   const [formData, setFormData] = useState({

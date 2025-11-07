@@ -1,10 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, User, Plus } from "lucide-react";
+import { User, CalendarPlus, CalendarSearch, UserIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { removeAuthToken, getAuthToken, searchUsers, User as UserType } from "@/services/api";
-import { SearchBar } from "./SearchBar";
+import { removeAuthToken, getAuthToken, searchUsers } from "@/services";
+import { User as UserType } from "@/types";
 
 export function Header() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -158,20 +157,31 @@ export function Header() {
         {/* Navigation */}
         <nav className="flex items-center space-x-2">
           {currentUser && (
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/create-event">
-                <Plus className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Host Event</span>
-              </Link>
-            </Button>
+            <div className="flex flex-row">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/create-event">
+                  <CalendarPlus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Host event</span>
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/explore">
+                  <CalendarSearch className="h-4 w-4" />
+                  <span className="hidden sm:inline">Explore events</span>
+                </Link>
+              </Button>
+            </div>
           )}
 
           {currentUser ? (
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground hidden sm:inline">
-                Welcome, {currentUser.name.split(" ")[0]}!
-              </span>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="outline" size="sm" asChild className="ml-4">
+                <Link to={`/profile/${currentUser.id}`}>
+                  <UserIcon className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Profile</span>
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
                 Logout
               </Button>
             </div>
