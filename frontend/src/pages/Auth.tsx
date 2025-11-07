@@ -6,13 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { createUser, loginUser, setAuthToken } from "@/services";
-import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
+import { usePasswordToggle } from "@/hooks/use-password-toggle";
 
 export default function Auth() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -20,9 +18,10 @@ export default function Auth() {
     password: "",
     university: "",
   });
-  const { toast } = useToast();
-  const navigate = useNavigate();
+
   const location = useLocation();
+  const { showPassword, togglePassword } = usePasswordToggle();
+  const { loading, signUp, login } = useAuth();
 
   // Determine which tab to show based on the current route
   const defaultTab = location.pathname === "/login" ? "login" : "signup";
@@ -37,122 +36,15 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (
-      !formData.firstName ||
-      !formData.lastName ||
-      !formData.email ||
-      !formData.password ||
-      !formData.university
-    ) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const userData = {
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        university: formData.university,
-        password: formData.password,
-      };
-
-      const user = await createUser(userData);
-
-      toast({
-        title: "Success!",
-        description: "Account created successfully! Please log in to continue.",
-        className: "bg-green-500 text-white border-green-600",
-      });
-
-      navigate("/login");
-    } catch (error: any) {
-      let errorMessage = "Failed to create account";
-
-      if (error.response?.data?.detail) {
-        // Handle Pydantic validation errors
-        if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail.map((err: any) => err.msg).join(", ");
-        } else {
-          errorMessage = error.response.data.detail;
-        }
-      }
-
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    await signUp(formData);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.email || !formData.password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const loginData = {
-        email: formData.email,
-        password: formData.password,
-      };
-
-      const loginResponse = await loginUser(loginData);
-
-      // Store the JWT token
-      setAuthToken(loginResponse.access_token);
-
-      // Store the real user data from the backend
-      localStorage.setItem("currentUser", JSON.stringify(loginResponse.user));
-      localStorage.setItem("userEmail", loginResponse.user.email);
-
-      // Dispatch custom event to notify Header of login
-      window.dispatchEvent(new CustomEvent("userLogin"));
-
-      toast({
-        title: "Success!",
-        description: "Logged in successfully. Welcome back!",
-        className: "bg-green-500 text-white border-green-600",
-      });
-
-      navigate("/explore");
-    } catch (error: any) {
-      let errorMessage = "Failed to log in";
-
-      if (error.response?.data?.detail) {
-        // Handle Pydantic validation errors
-        if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail.map((err: any) => err.msg).join(", ");
-        } else {
-          errorMessage = error.response.data.detail;
-        }
-      }
-
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    await login({
+      email: formData.email,
+      password: formData.password,
+    });
   };
 
   return (
@@ -260,7 +152,7 @@ export default function Auth() {
                           variant="ghost"
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
+                          onClick={togglePassword}
                         >
                           {showPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -322,7 +214,7 @@ export default function Auth() {
                           variant="ghost"
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
+                          onClick={togglePassword}
                         >
                           {showPassword ? (
                             <EyeOff className="h-4 w-4" />

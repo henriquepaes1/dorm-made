@@ -8,9 +8,11 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">DM</span>
-              </div>
+              <img
+                src="/assets/images/logo.png"
+                alt="Dorm Made Logo"
+                className="h-10 w-10 object-contain"
+              />
               <span className="font-bold text-xl">Dorm Made</span>
             </div>
             <p className="text-muted-foreground max-w-xs">
