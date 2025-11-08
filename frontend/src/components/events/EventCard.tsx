@@ -12,7 +12,7 @@ interface EventCardProps {
 
 export function EventCard({ event, activeTab, onJoinEvent }: EventCardProps) {
   return (
-    <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+    <Card key={event.id} className="flex flex-col over:shadow-lg transition-shadow min-w-[85vw] lg:min-w-0">
       <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
         {event.image_url ? (
           <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />
@@ -31,28 +31,26 @@ export function EventCard({ event, activeTab, onJoinEvent }: EventCardProps) {
           </div>
         )}
       </div>
-      <CardContent className="p-4">
+
+      <CardContent className="flex flex-col justify-between flex-grow p-4">
         <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
-
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Clock className="h-4 w-4 mr-2" />
-            {formatDate(event.event_date)}
-          </div>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 mr-2" />
-            {event.location}
-          </div>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Users className="h-4 w-4 mr-2" />
-            {event.current_participants}/{event.max_participants} participants
-          </div>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Clock className="h-4 w-4 mr-2" />
+          {formatDate(event.event_date)}
+        </div>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <MapPin className="h-4 w-4 mr-2" />
+          {event.location}
         </div>
 
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Users className="h-4 w-4 mr-2" />
+          {event.current_participants}/{event.max_participants} participants
+        </div>
         {activeTab === "all" && onJoinEvent && (
           <Button
-            className="w-full"
+            className="mx-4 mt-8"
             onClick={() => onJoinEvent(event.id)}
             disabled={event.current_participants >= event.max_participants}
           >

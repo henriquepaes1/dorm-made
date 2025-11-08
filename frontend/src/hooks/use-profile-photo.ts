@@ -13,9 +13,7 @@ interface UseProfilePhotoReturn {
 /**
  * Custom hook for handling profile photo uploads
  */
-export function useProfilePhoto(
-  onPhotoUploaded?: (user: User) => void
-): UseProfilePhotoReturn {
+export function useProfilePhoto(onPhotoUploaded?: (user: User) => void): UseProfilePhotoReturn {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -44,6 +42,7 @@ export function useProfilePhoto(
           title: "Sucesso!",
           description: "Foto de perfil atualizada com sucesso",
           className: "bg-green-500 text-white border-green-600",
+          duration: 1500,
         });
 
         // Reset file input
@@ -57,20 +56,22 @@ export function useProfilePhoto(
         }
       } catch (error: unknown) {
         console.error("Error uploading photo:", error);
-        const errorMessage = error instanceof Error && 'response' in error
-          ? (error as any).response?.data?.detail || "Não foi possível fazer upload da foto"
-          : "Não foi possível fazer upload da foto";
+        const errorMessage =
+          error instanceof Error && "response" in error
+            ? (error as any).response?.data?.detail || "Não foi possível fazer upload da foto"
+            : "Não foi possível fazer upload da foto";
 
         toast({
           title: "Erro",
           description: errorMessage,
           variant: "destructive",
+          duration: 1500,
         });
       } finally {
         setUploadingPhoto(false);
       }
     },
-    [toast, onPhotoUploaded, fileInputRef]
+    [toast, onPhotoUploaded, fileInputRef],
   );
 
   const handleFileSelect = useCallback(
@@ -85,6 +86,7 @@ export function useProfilePhoto(
           title: "Erro",
           description: "Apenas arquivos JPEG e PNG são permitidos",
           variant: "destructive",
+          duration: 1500,
         });
         return;
       }
@@ -96,6 +98,7 @@ export function useProfilePhoto(
           title: "Erro",
           description: "O arquivo excede o limite de 5MB",
           variant: "destructive",
+          duration: 1500,
         });
         return;
       }
@@ -104,7 +107,7 @@ export function useProfilePhoto(
       // Note: The actual upload logic needs to be triggered by the parent component
       // by calling handleUploadPhoto with the file and userId
     },
-    [toast]
+    [toast],
   );
 
   return {

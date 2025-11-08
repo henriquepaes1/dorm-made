@@ -35,6 +35,7 @@ export function useCreateEvent(): UseCreateEventReturn {
         title: "Authentication Required",
         description: "Please log in to create events",
         variant: "destructive",
+        duration: 1500,
       });
       navigate("/login");
     }
@@ -48,6 +49,7 @@ export function useCreateEvent(): UseCreateEventReturn {
           title: "Please Sign In",
           description: "You need to sign in to create events",
           variant: "destructive",
+          duration: 1500,
         });
         return;
       }
@@ -55,7 +57,7 @@ export function useCreateEvent(): UseCreateEventReturn {
       // Validate required fields
       const requiredFields = ["title", "description", "max_participants", "event_date", "location"];
       const missingFields = requiredFields.filter(
-        (field) => !formData[field as keyof EventFormData]
+        (field) => !formData[field as keyof EventFormData],
       );
 
       if (missingFields.length > 0) {
@@ -63,6 +65,7 @@ export function useCreateEvent(): UseCreateEventReturn {
           title: "Error",
           description: "Please fill in all required fields",
           variant: "destructive",
+          duration: 1500,
         });
         return;
       }
@@ -77,6 +80,7 @@ export function useCreateEvent(): UseCreateEventReturn {
             title: "Authentication Required",
             description: "Please log in to create events",
             variant: "destructive",
+            duration: 1500,
           });
           navigate("/login");
           return;
@@ -112,6 +116,7 @@ export function useCreateEvent(): UseCreateEventReturn {
           title: "Success!",
           description: "Event created successfully!",
           className: "bg-green-500 text-white border-green-600",
+          duration: 1500,
         });
 
         navigate("/explore");
@@ -125,12 +130,13 @@ export function useCreateEvent(): UseCreateEventReturn {
           title: "Error",
           description: error.response?.data?.detail || "Failed to create event",
           variant: "destructive",
+          duration: 1500,
         });
       } finally {
         setLoading(false);
       }
     },
-    [toast, navigate]
+    [toast, navigate],
   );
 
   return {
