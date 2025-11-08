@@ -1,48 +1,33 @@
 import { Button } from "@/components/ui/button";
-import { User, CalendarPlus, CalendarSearch, UserIcon } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
-import { removeAuthToken, getAuthToken, searchUsers } from "@/services";
-import { User as UserType } from "@/types";
+import { User, CalendarPlus, CalendarSearch, Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { removeAuthToken, getAuthToken } from "@/services";
 
 export function Header() {
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<UserType[]>([]);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = () => {
       const user = localStorage.getItem("currentUser");
       const token = getAuthToken();
 
-      // Only set user if both user data and token exist
       if (user && token && user !== "undefined") {
         try {
           const parsedUser = JSON.parse(user);
-          console.log("Header checkAuth - parsed user:", parsedUser);
           setCurrentUser(parsedUser);
         } catch (error) {
           console.error("Error parsing user data:", error);
           setCurrentUser(null);
         }
       } else {
-        console.log("Header checkAuth - setting user to null");
         setCurrentUser(null);
       }
     };
 
-    // Check auth on mount
     checkAuth();
-
-    // Listen for storage changes (when user logs in from another tab)
     window.addEventListener("storage", checkAuth);
-
-    // Listen for custom login event
     window.addEventListener("userLogin", checkAuth);
 
     return () => {
@@ -51,157 +36,141 @@ export function Header() {
     };
   }, []);
 
-  useEffect(() => {
-    // Cleanup timeout on unmount
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    // Close search when clicking outside
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target as Node)
-      ) {
-        setIsSearchOpen(false);
-      }
-    };
-
-    if (isSearchOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isSearchOpen]);
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-
-    // Clear previous timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    // If query is less than 2 characters, clear results
-    if (value.trim().length < 2) {
-      setSearchResults([]);
-      setIsSearchOpen(false);
-      return;
-    }
-
-    // Debounce search
-    setIsSearching(true);
-    searchTimeoutRef.current = setTimeout(async () => {
-      try {
-        const results = await searchUsers(value.trim(), 8);
-        setSearchResults(results);
-        setIsSearchOpen(results.length > 0);
-        setIsSearching(false);
-      } catch (error) {
-        console.error("Error searching users:", error);
-        setSearchResults([]);
-        setIsSearchOpen(false);
-        setIsSearching(false);
-      }
-    }, 300);
-  };
-
-  const handleUserSelect = (userId: string) => {
-    setSearchQuery("");
-    setSearchResults([]);
-    setIsSearchOpen(false);
-    navigate(`/profile/${userId}`);
-  };
-
-  const handleExploreClick = (e: React.MouseEvent) => {
-    if (searchQuery.trim().length >= 2) {
-      e.preventDefault();
-      navigate(`/explore?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const handleLogout = () => {
     localStorage.removeItem("currentUser");
     localStorage.removeItem("userEmail");
     removeAuthToken();
     setCurrentUser(null);
+    setMobileMenuOpen(false);
     window.location.href = "/";
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        {/* Brand */}
-        <Link to="/" className="flex items-center space-x-2">
-          <img
-            src="/assets/images/logo.png"
-            alt="Dorm Made Logo"
-            className="h-10 w-10 object-contain"
-          />
-          <span className="font-bold text-xl text-foreground">Dorm Made</span>
-        </Link>
+    <>
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-16 items-center justify-between px-4 max-w-[1400px] mx-auto">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <img src="/assets/images/logo.png" alt="Dorm Made" className="h-8 w-8 object-contain" />
+            <span className="font-bold text-lg hidden lg:inline">Dorm Made</span>
+          </Link>
 
-        {/* Navigation */}
-        <nav className="flex items-center space-x-2">
+          {/* Desktop Navigation - Logged In */}
           {currentUser && (
-            <div className="flex flex-row">
+            <nav className="hidden lg:flex items-center gap-2">
               <Button variant="ghost" size="sm" asChild>
-                <Link to="/create-event">
+                <Link to="/create-event" className="flex items-center gap-2">
                   <CalendarPlus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Host event</span>
+                  <span>Host event</span>
                 </Link>
               </Button>
               <Button variant="ghost" size="sm" asChild>
-                <Link to="/explore">
+                <Link to="/explore" className="flex items-center gap-2">
                   <CalendarSearch className="h-4 w-4" />
-                  <span className="hidden sm:inline">Explore events</span>
+                  <span>Explore events</span>
                 </Link>
               </Button>
-            </div>
-          )}
-
-          {currentUser ? (
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" asChild className="ml-4">
-                <Link to={`/profile/${currentUser.id}`}>
-                  <UserIcon className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Profile</span>
+              <Button variant="outline" size="sm" asChild className="ml-2">
+                <Link to={`/profile/${currentUser.id}`} className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>Profile</span>
                 </Link>
               </Button>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 Logout
               </Button>
-            </div>
-          ) : (
-            <>
+            </nav>
+          )}
+
+          {/* Desktop Navigation - Not Logged In */}
+          {!currentUser && (
+            <div className="hidden lg:flex items-center gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link to="/login">
-                  <User className="h-4 w-4 mr-2" />
-                  Login
+                <Link to="/login" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>Login</span>
                 </Link>
               </Button>
               <Button size="sm" asChild>
                 <Link to="/signup">Sign Up</Link>
               </Button>
-            </>
+            </div>
           )}
-        </nav>
-      </div>
-    </header>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="lg:hidden p-2 hover:bg-accent rounded-md transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 top-16 z-40 bg-background">
+          <nav className="px-4 py-6 space-y-2 max-w-[1400px] mx-auto">
+            {currentUser ? (
+              <>
+                <Link
+                  to="/create-event"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <CalendarPlus className="h-5 w-5" />
+                  <span className="font-medium">Host event</span>
+                </Link>
+
+                <Link
+                  to="/explore"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <CalendarSearch className="h-5 w-5" />
+                  <span className="font-medium">Explore events</span>
+                </Link>
+
+                <Link
+                  to={`/profile/${currentUser.id}`}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <User className="h-5 w-5" />
+                  <span className="font-medium">Profile</span>
+                </Link>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent transition-colors text-left"
+                >
+                  <span className="font-medium">Logout</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="block px-4 py-3 rounded-lg hover:bg-accent transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="font-medium">Login</span>
+                </Link>
+
+                <Link
+                  to="/signup"
+                  className="block px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-center font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
+          </nav>
+        </div>
+      )}
+    </>
   );
 }

@@ -34,6 +34,7 @@ export function useAuth(): UseAuthReturn {
           title: "Error",
           description: "Please fill in all required fields",
           variant: "destructive",
+          duration: 1500,
         });
         return;
       }
@@ -54,6 +55,7 @@ export function useAuth(): UseAuthReturn {
           title: "Success!",
           description: "Account created successfully! Please log in to continue.",
           className: "bg-green-500 text-white border-green-600",
+          duration: 1500,
         });
 
         navigate("/login");
@@ -73,12 +75,13 @@ export function useAuth(): UseAuthReturn {
           title: "Error",
           description: errorMessage,
           variant: "destructive",
+          duration: 1500,
         });
       } finally {
         setLoading(false);
       }
     },
-    [toast, navigate]
+    [toast, navigate],
   );
 
   const login = useCallback(
@@ -89,6 +92,7 @@ export function useAuth(): UseAuthReturn {
           title: "Error",
           description: "Please fill in all required fields",
           variant: "destructive",
+          duration: 1500,
         });
         return;
       }
@@ -115,6 +119,7 @@ export function useAuth(): UseAuthReturn {
           title: "Success!",
           description: "Logged in successfully. Welcome back!",
           className: "bg-green-500 text-white border-green-600",
+          duration: 1500,
         });
 
         navigate("/explore");
@@ -134,12 +139,13 @@ export function useAuth(): UseAuthReturn {
           title: "Error",
           description: errorMessage,
           variant: "destructive",
+          duration: 1500,
         });
       } finally {
         setLoading(false);
       }
     },
-    [toast, navigate]
+    [toast, navigate],
   );
 
   return {

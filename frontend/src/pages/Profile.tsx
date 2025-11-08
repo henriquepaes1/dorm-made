@@ -4,12 +4,12 @@ import { Footer } from "@/components/home/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useProfile } from "@/hooks/use-profile";
 import { useProfilePhoto } from "@/hooks/use-profile-photo";
+import { EventCard } from "@/components/events/EventCard";
 import {
   GraduationCap,
   User as UserIcon,
@@ -20,11 +20,7 @@ import {
   X,
   Upload,
   Image as ImageIcon,
-  MapPin,
-  Clock,
-  Users,
 } from "lucide-react";
-import { formatDate } from "@/lib/utils";
 import { User } from "@/types";
 
 export default function Profile() {
@@ -84,7 +80,7 @@ export default function Profile() {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Carregando perfil...</p>
+              <p className="text-muted-foreground">Loading profile...</p>
             </div>
           </div>
         </main>
@@ -99,12 +95,12 @@ export default function Profile() {
         <Header />
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold mb-2">Usuário não encontrado</h2>
+            <h2 className="text-2xl font-bold mb-2">User not found</h2>
             <p className="text-muted-foreground mb-4">
-              O perfil que você está procurando não existe.
+              The profile you're looking for doesn't exist.
             </p>
             <Button asChild>
-              <Link to="/">Voltar ao início</Link>
+              <Link to="/">Back to home</Link>
             </Button>
           </div>
         </main>
@@ -122,158 +118,183 @@ export default function Profile() {
           {/* Back Button */}
           <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
+            Back
           </Button>
 
           {/* Profile Card */}
           <Card className="mb-6">
-            <CardContent className="p-8">
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                {/* Profile Picture */}
-                <div className="relative">
-                  <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-lg">
-                    {editingUser?.profile_picture ? (
-                      <AvatarImage src={editingUser.profile_picture} alt={user.name} />
-                    ) : null}
-                    <AvatarFallback className="text-3xl md:text-4xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
-                      {getInitials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png"
-                    onChange={handleFileSelectWrapper}
-                    ref={fileInputRef}
-                    className="hidden"
-                    id="profile-photo-upload"
-                    disabled={uploadingPhoto}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingPhoto}
-                    className="absolute bottom-0 right-0 rounded-full w-10 h-10 p-0 border-2 border-background shadow-lg"
-                  >
-                    {uploadingPhoto ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    ) : (
-                      <Upload className="h-4 w-4" />
+            <CardContent className="p-4 lg:p-8">
+              <div className="flex flex-col lg:flex-row lg:items-start gap-4 lg:gap-6">
+                {/* Avatar Section */}
+                <div className="flex flex-col items-center lg:items-start">
+                  <div className="relative">
+                    <Avatar className="h-24 w-24 lg:h-32 lg:w-32 border-4 border-background shadow-lg">
+                      {editingUser?.profile_picture ? (
+                        <AvatarImage src={editingUser.profile_picture} alt={user.name} />
+                      ) : null}
+                      <AvatarFallback className="text-2xl lg:text-3xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground">
+                        {getInitials(user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png"
+                      onChange={handleFileSelectWrapper}
+                      ref={fileInputRef}
+                      className="hidden"
+                      id="profile-photo-upload"
+                      disabled={uploadingPhoto}
+                    />
+                    {isOwnProfile() && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingPhoto}
+                        className="absolute bottom-0 right-0 h-8 w-8 lg:h-10 lg:w-10 rounded-full bg-background border-2 border-card shadow-lg flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-50"
+                        aria-label="Upload photo"
+                      >
+                        {uploadingPhoto ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        ) : (
+                          <Upload className="h-4 w-4 text-foreground" />
+                        )}
+                      </button>
                     )}
-                  </Button>
+                  </div>
                 </div>
 
-                {/* User Info */}
-                <div className="flex-1 w-full">
-                  <div className="flex items-start justify-between mb-4">
-                    <h1 className="text-3xl md:text-4xl font-bold">{user.name}</h1>
-                    <div className="flex gap-2 ml-4">
-                      {!isEditing ? (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploadingPhoto}
-                          >
-                            <ImageIcon className="h-4 w-4 mr-2" />
-                            {uploadingPhoto ? "Enviando..." : "Upload Photo"}
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                            <Edit2 className="h-4 w-4 mr-2" />
-                            Editar
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleCancel}
-                            disabled={saving}
-                          >
-                            <X className="h-4 w-4 mr-2" />
-                            Cancelar
-                          </Button>
-                          <Button size="sm" onClick={handleSaveWrapper} disabled={saving}>
-                            <Save className="h-4 w-4 mr-2" />
-                            {saving ? "Salvando..." : "Salvar"}
-                          </Button>
-                        </>
-                      )}
-                    </div>
+                {/* Info Section*/}
+                <div className="flex-1 space-y-3 lg:space-y-4 w-full">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <h1 className="text-2xl lg:text-4xl font-bold text-center lg:text-left">
+                      {user.name}
+                    </h1>
+
+                    {/* Action Buttons*/}
+                    {isOwnProfile() && (
+                      <div className="flex gap-2 w-full lg:w-auto lg:ml-4">
+                        {!isEditing ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={uploadingPhoto}
+                              className="flex-1 lg:flex-initial"
+                            >
+                              <ImageIcon className="h-4 w-4 lg:mr-2" />
+                              <span className="inline">
+                                {uploadingPhoto ? "Uploading..." : "Photo"}
+                              </span>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsEditing(true)}
+                              className="flex-1 lg:flex-initial"
+                            >
+                              <Edit2 className="h-4 w-4 lg:mr-2" />
+                              <span className="inline">Edit</span>
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleCancel}
+                              disabled={saving}
+                              className="flex-1 lg:flex-initial"
+                            >
+                              <X className="h-4 w-4 lg:mr-2" />
+                              <span className="inline">Cancel</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={handleSaveWrapper}
+                              disabled={saving}
+                              className="flex-1 lg:flex-initial"
+                            >
+                              <Save className="h-4 w-4 lg:mr-2" />
+                              <span className="inline">{saving ? "Saving..." : "Save"}</span>
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
 
+                  {/* University*/}
+                  {!isEditing && user.university && (
+                    <div className="flex items-center justify-center lg:justify-start text-base lg:text-lg text-muted-foreground">
+                      <GraduationCap className="h-4 w-4 lg:h-5 lg:w-5 mr-2 flex-shrink-0" />
+                      <span>{user.university}</span>
+                    </div>
+                  )}
+
+                  {/* Edit Mode or View Mode */}
                   {isEditing ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 pt-2">
                       <div>
-                        <Label htmlFor="university" className="flex items-center mb-2">
+                        <Label htmlFor="university" className="flex items-center mb-2 text-sm">
                           <GraduationCap className="h-4 w-4 mr-2" />
-                          Universidade
+                          University
                         </Label>
                         <Input
                           id="university"
                           value={editingUser?.university || ""}
                           onChange={(e) => updateEditingUser({ university: e.target.value })}
-                          placeholder="Digite sua universidade"
+                          placeholder="Enter your university"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="description" className="flex items-center mb-2">
+                        <Label htmlFor="description" className="flex items-center mb-2 text-sm">
                           <UserIcon className="h-4 w-4 mr-2" />
-                          Sobre você
+                          About you
                         </Label>
                         <Textarea
                           id="description"
                           value={editingUser?.description || ""}
                           onChange={(e) => updateEditingUser({ description: e.target.value })}
-                          placeholder="Conte um pouco sobre você..."
+                          placeholder="Tell us about yourself..."
                           rows={4}
                           className="resize-none"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="profile_picture" className="mb-2">
-                          URL da Foto de Perfil
+                        <Label htmlFor="profile_picture" className="mb-2 text-sm">
+                          Profile Photo URL
                         </Label>
                         <Input
                           id="profile_picture"
                           value={editingUser?.profile_picture || ""}
                           onChange={(e) => updateEditingUser({ profile_picture: e.target.value })}
-                          placeholder="https://exemplo.com/foto.jpg"
+                          placeholder="https://example.com/photo.jpg"
                           type="url"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Cole a URL da sua foto de perfil
+                          Paste your profile photo URL
                         </p>
                       </div>
                     </div>
                   ) : (
                     <>
-                      {user.university && (
-                        <div className="flex items-center text-lg text-muted-foreground mb-3">
-                          <GraduationCap className="h-5 w-5 mr-2" />
-                          <span>{user.university}</span>
+                      {user.description && (
+                        <div className="space-y-2 pt-2 lg:pt-4">
+                          <div className="flex items-center text-sm font-medium text-muted-foreground">
+                            <UserIcon className="h-4 w-4 mr-2" />
+                            About
+                          </div>
+                          <p className="text-sm lg:text-base text-foreground leading-relaxed">
+                            {user.description}
+                          </p>
                         </div>
                       )}
-
-                      {user.description ? (
-                        <>
-                          <Separator className="my-4" />
-                          <div className="space-y-2">
-                            <div className="flex items-center text-sm font-medium text-muted-foreground">
-                              <UserIcon className="h-4 w-4 mr-2" />
-                              Sobre
-                            </div>
-                            <p className="text-foreground leading-relaxed">{user.description}</p>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="text-muted-foreground italic">
-                          Nenhuma descrição disponível. Clique em "Editar" para adicionar.
+                      {!user.description && isOwnProfile() && (
+                        <p className="text-sm text-muted-foreground italic text-center lg:text-left pt-2">
+                          No description yet. Click "Edit" to add one.
                         </p>
                       )}
                     </>
@@ -285,82 +306,49 @@ export default function Profile() {
 
           {/* My Meals Section */}
           <Card className="mb-6">
-            <CardContent className="p-6">
+            <CardContent className="p-4 lg:p-6">
               <div className="mb-6">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary-glow/20 flex items-center justify-center">
                     <UtensilsCrossed className="h-5 w-5 text-primary" />
                   </div>
-                  <h2 className="text-2xl font-bold">{isOwnProfile() ? "My Meals" : "Meals"}</h2>
+                  <h2 className="text-xl lg:text-2xl font-bold">
+                    {isOwnProfile() ? "My Meals" : "Meals"}
+                  </h2>
                 </div>
-                <p className="text-sm text-muted-foreground">Eventos criados por {user.name}</p>
+                <p className="text-sm text-muted-foreground">Events created by me</p>
               </div>
 
               {loadingEvents ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Carregando eventos...</p>
+                    <p className="text-muted-foreground">Loading events...</p>
                   </div>
                 </div>
               ) : userEvents.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-4xl mb-4">🍽️</div>
-                  <h3 className="text-lg font-semibold mb-2">Nenhum evento criado ainda</h3>
+                  <h3 className="text-lg font-semibold mb-2">No events created yet</h3>
                   <p className="text-muted-foreground mb-4">
                     {user.id === JSON.parse(localStorage.getItem("currentUser") || "{}")?.id
-                      ? "Crie seu primeiro evento culinário para começar!"
-                      : `${user.name} ainda não criou nenhum evento.`}
+                      ? "Create your first culinary event to get started!"
+                      : `${user.name} hasn't created any events yet.`}
                   </p>
                   {user.id === JSON.parse(localStorage.getItem("currentUser") || "{}")?.id && (
                     <Button asChild>
-                      <Link to="/create-event">Criar Evento</Link>
+                      <Link to="/create-event">Create Event</Link>
                     </Button>
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
                   {userEvents.map((event) => (
-                    <Card
+                    <EventCard
                       key={event.id}
-                      className="overflow-hidden hover:shadow-lg transition-shadow"
-                    >
-                      <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
-                        {event.image_url ? (
-                          <img
-                            src={event.image_url}
-                            alt={event.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="text-center">
-                            <div className="text-4xl mb-2">🍳</div>
-                            <p className="text-sm text-muted-foreground">Culinary Event</p>
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                          {event.description}
-                        </p>
-
-                        <div className="space-y-2">
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Clock className="h-4 w-4 mr-2" />
-                            {formatDate(event.event_date)}
-                          </div>
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4 mr-2" />
-                            {event.location}
-                          </div>
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Users className="h-4 w-4 mr-2" />
-                            {event.current_participants}/{event.max_participants} participantes
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      event={event}
+                      activeTab="profile"
+                    />
                   ))}
                 </div>
               )}

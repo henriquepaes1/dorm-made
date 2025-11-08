@@ -38,6 +38,7 @@ export function useEvents(): UseEventsReturn {
         title: "Error",
         description: "Failed to load events. Please try again.",
         variant: "destructive",
+        duration: 1500,
       });
     } finally {
       setLoading(false);
@@ -87,6 +88,7 @@ export function useEvents(): UseEventsReturn {
           title: "Authentication Required",
           description: "Please log in to join events.",
           variant: "destructive",
+          duration: 1500,
         });
         return;
       }
@@ -98,6 +100,7 @@ export function useEvents(): UseEventsReturn {
         toast({
           title: "Success",
           description: "You have successfully joined the event!",
+          duration: 1500,
         });
 
         // Refresh all event lists to reflect the change
@@ -109,6 +112,7 @@ export function useEvents(): UseEventsReturn {
           title: "Error",
           description: errorMessage,
           variant: "destructive",
+          duration: 1500,
         });
 
         console.error("Error joining event:", err);

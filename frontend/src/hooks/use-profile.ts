@@ -90,12 +90,13 @@ export function useProfile(userId?: string): UseProfileReturn {
           title: "Erro",
           description: errorMessage,
           variant: "destructive",
+          duration: 1500,
         });
       } finally {
         setLoading(false);
       }
     },
-    [toast, loadUserEvents]
+    [toast, loadUserEvents],
   );
 
   const handleSave = useCallback(
@@ -121,6 +122,7 @@ export function useProfile(userId?: string): UseProfileReturn {
           title: "Sucesso!",
           description: "Perfil atualizado com sucesso",
           className: "bg-green-500 text-white border-green-600",
+          duration: 1500,
         });
       } catch (error: any) {
         console.error("Error updating user:", error);
@@ -128,12 +130,13 @@ export function useProfile(userId?: string): UseProfileReturn {
           title: "Erro",
           description: error.response?.data?.detail || "Não foi possível atualizar o perfil",
           variant: "destructive",
+          duration: 1500,
         });
       } finally {
         setSaving(false);
       }
     },
-    [editingUser, toast]
+    [editingUser, toast],
   );
 
   const handleCancel = useCallback(() => {

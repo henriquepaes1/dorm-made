@@ -67,16 +67,16 @@ export default function Explore() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 mx-16 mb-8">
+          <TabsList className="grid grid-cols-3 mx-auto lg:mx-16 mb-8">
             <TabsTrigger value="all">All Meals</TabsTrigger>
             <TabsTrigger value="my">My Meals</TabsTrigger>
             <TabsTrigger value="joined">Joined Meals</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
               {allEvents.length === 0 ? (
-                <div className="col-span-full text-center py-12">
+                <div className="col-span-full text-center py-12 w-full">
                   <h3 className="text-lg font-semibold mb-2">No events yet</h3>
                   <p className="text-muted-foreground">Be the first to host a culinary event!</p>
                 </div>
@@ -94,7 +94,7 @@ export default function Explore() {
           </TabsContent>
 
           <TabsContent value="my">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
               {myEvents.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <h3 className="text-lg font-semibold mb-2">No events created yet</h3>
@@ -116,7 +116,7 @@ export default function Explore() {
           </TabsContent>
 
           <TabsContent value="joined">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
               {joinedEvents.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <h3 className="text-lg font-semibold mb-2">No joined events yet</h3>
