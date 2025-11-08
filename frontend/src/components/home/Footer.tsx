@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer className="bg-card border-t">
       <div className="container mx-auto px-4 py-4">
-        <div className="flex justify-between">
+        <div className="flex justify-center space-x- lg:justify-between">
           {/* Brand */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
