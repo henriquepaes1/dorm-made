@@ -74,7 +74,7 @@ export default function Explore() {
           </TabsList>
 
           <TabsContent value="all">
-            <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible lg:snap-none">
+            <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
               {allEvents.length === 0 ? (
                 <div className="col-span-full text-center py-12 w-full">
                   <h3 className="text-lg font-semibold mb-2">No events yet</h3>
@@ -94,7 +94,7 @@ export default function Explore() {
           </TabsContent>
 
           <TabsContent value="my">
-            <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible lg:snap-none">
+            <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
               {myEvents.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <h3 className="text-lg font-semibold mb-2">No events created yet</h3>
@@ -116,7 +116,7 @@ export default function Explore() {
           </TabsContent>
 
           <TabsContent value="joined">
-            <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible lg:snap-none">
+            <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
               {joinedEvents.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <h3 className="text-lg font-semibold mb-2">No joined events yet</h3>
