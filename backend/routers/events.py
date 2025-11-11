@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, File, UploadFile, Form
 from typing import List, Annotated, Optional
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from schemas.event import Event, EventCreate
 from schemas.event_participant import EventParticipant
 from utils.auth import get_current_user_id
+from utils.database import get_db
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -18,6 +20,7 @@ async def create_event(
     location: Annotated[str, Form()],
     event_date: Annotated[str, Form()],
     current_user_id: Annotated[str, Depends(get_current_user_id)],
+    db: Session = Depends(get_db),
     price: Annotated[Optional[str], Form()] = None,
     image: Annotated[Optional[UploadFile], File()] = None
 ):
@@ -42,12 +45,13 @@ async def create_event(
         price=price_float
     )
 
-    return await create_event(event_data, current_user_id, image)
+    return await create_event(event_data, current_user_id, db, image)
 
 @router.post("/join/")
 async def join_event(
     join_request: JoinEventRequest,
-    current_user_id: Annotated[str, Depends(get_current_user_id)]
+    current_user_id: Annotated[str, Depends(get_current_user_id)],
+    db: Session = Depends(get_db)
 ):
     """Join an existing event"""
     from services.event_service import join_event
@@ -56,22 +60,22 @@ async def join_event(
         "user_id": current_user_id,
         "event_id": join_request.event_id
     }
-    return await join_event(full_request)
+    return await join_event(full_request, db)
 
 @router.get("/", response_model=List[Event])
-async def list_events():
+async def list_events(db: Session = Depends(get_db)):
     """List all available events"""
     from services.event_service import list_events
-    return await list_events()
+    return await list_events(db)
 
 @router.get("/{event_id}", response_model=Event)
-async def get_event_details(event_id: str):
+async def get_event_details(event_id: str, db: Session = Depends(get_db)):
     """Get details of a specific event"""
     from services.event_service import get_event_details
-    return await get_event_details(event_id)
+    return await get_event_details(event_id, db)
 
 @router.get("/{event_id}/participants", response_model=List[EventParticipant])
-async def get_event_participants(event_id: str):
+async def get_event_participants(event_id: str, db: Session = Depends(get_db)):
     """Get all participants for a specific event"""
     from services.event_service import get_event_participants
-    return await get_event_participants(event_id)
+    return await get_event_participants(event_id, db)

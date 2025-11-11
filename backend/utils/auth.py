@@ -31,12 +31,16 @@ async def get_current_user_id(credentials: Annotated[HTTPAuthorizationCredential
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-async def get_current_user(user_id: Annotated[str, Depends(get_current_user_id)]) -> dict:
+async def get_current_user(
+    user_id: Annotated[str, Depends(get_current_user_id)],
+    db = Depends(None)
+) -> dict:
     """
     Dependency to verify that the user exists in the database.
 
     Args:
         user_id: User ID extracted from JWT token
+        db: Database session
 
     Returns:
         dict: User data from database
@@ -45,8 +49,19 @@ async def get_current_user(user_id: Annotated[str, Depends(get_current_user_id)]
         HTTPException: If user doesn't exist
     """
     from services.user_service import get_user_by_id
+    from utils.database import get_db
 
-    user = get_user_by_id(user_id)
+    # Get database session if not provided
+    if db is None:
+        db_gen = get_db()
+        db = next(db_gen)
+        try:
+            user = get_user_by_id(user_id, db)
+        finally:
+            db_gen.close()
+    else:
+        user = get_user_by_id(user_id, db)
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
