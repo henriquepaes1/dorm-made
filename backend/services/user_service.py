@@ -1,12 +1,13 @@
 from fastapi import HTTPException, UploadFile
 from typing import Optional, List
 from sqlalchemy.orm import Session
+from datetime import datetime
+import uuid
+
 from models.user import UserModel
 from schemas.user import User, UserCreate, UserLogin, UserUpdate, LoginResponse
 from utils.password import hash_password, verify_password, create_access_token
-import uuid
-from datetime import datetime
-
+from utils.converters import user_model_to_schema, user_models_to_schemas
 from utils.supabase import supabase
 
 
@@ -15,15 +16,7 @@ async def get_user(user_id: str, db: Session) -> Optional[User]:
     try:
         user_model = db.query(UserModel).filter(UserModel.id == user_id).first()
         if user_model:
-            return User(
-                id=user_model.id,
-                name=user_model.name,
-                email=user_model.email,
-                university=user_model.university,
-                description=user_model.description,
-                profile_picture=user_model.profile_picture,
-                created_at=user_model.created_at
-            )
+            return user_model_to_schema(user_model)
         return None
     except Exception as e:
         print(f"Error getting user: {e}")
@@ -57,15 +50,7 @@ async def create_user(user: UserCreate, db: Session) -> User:
         db.commit()
         db.refresh(user_model)
 
-        return User(
-            id=user_model.id,
-            name=user_model.name,
-            email=user_model.email,
-            university=user_model.university,
-            description=user_model.description,
-            profile_picture=user_model.profile_picture,
-            created_at=user_model.created_at
-        )
+        return user_model_to_schema(user_model)
     except HTTPException:
         raise
     except Exception as e:
@@ -104,21 +89,10 @@ async def authenticate_user(login_data: UserLogin, db: Session) -> LoginResponse
     print(f"Creating token with user ID: {user_model.id} (type: {type(user_model.id)})")
     access_token = create_access_token(data={"userId": user_model.id})
 
-    # Create User object without hashed_password
-    user_obj = User(
-        id=user_model.id,
-        name=user_model.name,
-        email=user_model.email,
-        university=user_model.university,
-        description=user_model.description,
-        profile_picture=user_model.profile_picture,
-        created_at=user_model.created_at
-    )
-
     return LoginResponse(
         access_token=access_token,
         token_type="bearer",
-        user=user_obj
+        user=user_model_to_schema(user_model)
     )
 
 
@@ -140,15 +114,7 @@ async def update_user(user_id: str, user_update: UserUpdate, db: Session) -> Use
         db.commit()
         db.refresh(user_model)
 
-        return User(
-            id=user_model.id,
-            name=user_model.name,
-            email=user_model.email,
-            university=user_model.university,
-            description=user_model.description,
-            profile_picture=user_model.profile_picture,
-            created_at=user_model.created_at
-        )
+        return user_model_to_schema(user_model)
     except HTTPException:
         raise
     except Exception as e:
@@ -170,19 +136,7 @@ async def search_users(query: str, db: Session, limit: int = 10) -> List[User]:
             UserModel.name.ilike(f"%{query.strip()}%")
         ).limit(limit).all()
 
-        users = []
-        for user_model in user_models:
-            users.append(User(
-                id=user_model.id,
-                name=user_model.name,
-                email=user_model.email,
-                university=user_model.university,
-                description=user_model.description,
-                profile_picture=user_model.profile_picture,
-                created_at=user_model.created_at
-            ))
-
-        return users
+        return user_models_to_schemas(user_models)
     except Exception as e:
         print(f"Error searching users: {e}")
         import traceback

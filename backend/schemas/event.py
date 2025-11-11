@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Union, Optional
 
@@ -19,9 +19,5 @@ class Event(EventBase):
     current_participants: int
     event_date: datetime  # Store as datetime
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+
+    model_config = ConfigDict(from_attributes=True)

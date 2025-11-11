@@ -1,47 +1,40 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from typing import List, Annotated
 from sqlalchemy.orm import Session
+
 from schemas.user import User, UserCreate, UserLogin, UserUpdate, LoginResponse
 from schemas.event import Event
 from utils.auth import get_current_user_id
 from utils.database import get_db
+from services import user_service, event_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post("/", response_model=User)
-async def create_user(user: UserCreate, db: Session = Depends(get_db)):
+async def create_user_endpoint(user: UserCreate, db: Session = Depends(get_db)):
     """Create a new user"""
-    from services.user_service import create_user
-    return await create_user(user, db)
+    return await user_service.create_user(user, db)
 
 @router.post("/login", response_model=LoginResponse)
-async def login(login_data: UserLogin, db: Session = Depends(get_db)):
+async def login_endpoint(login_data: UserLogin, db: Session = Depends(get_db)):
     """Authenticate user and return JWT token"""
-    from services.user_service import authenticate_user
-    return await authenticate_user(login_data, db)
+    return await user_service.authenticate_user(login_data, db)
 
 @router.get("/me/events", response_model=List[Event])
-async def get_my_events(
+async def get_my_events_endpoint(
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Session = Depends(get_db)
 ):
     """Get all events created by the authenticated user"""
-    from services.event_service import get_user_events
-    return await get_user_events(current_user_id, db)
+    return await event_service.get_user_events(current_user_id, db)
 
 @router.get("/me/joined-events", response_model=List[Event])
-async def get_my_joined_events(
+async def get_my_joined_events_endpoint(
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Session = Depends(get_db)
 ):
     """Get all events that the authenticated user has joined"""
-    from services.event_service import get_user_joined_events
-    try:
-        return await get_user_joined_events(current_user_id, db)
-    except Exception as e:
-        print(f"Error in get_my_joined_events: {e}")
-        # For now, return empty list if error occurs
-        return []
+    return await event_service.get_user_joined_events(current_user_id, db)
 
 @router.get("/test")
 async def test_endpoint():
@@ -49,14 +42,13 @@ async def test_endpoint():
     return {"message": "Users router is working"}
 
 @router.get("/search", response_model=List[User])
-async def search_users(query: str, limit: int = 10, db: Session = Depends(get_db)):
+async def search_users_endpoint(query: str, limit: int = 10, db: Session = Depends(get_db)):
     """Search users by name"""
-    from services.user_service import search_users
-    return await search_users(query, db, limit)
+    return await user_service.search_users(query, db, limit)
 
 # More specific routes should come BEFORE generic ones to avoid routing conflicts
 @router.post("/{user_id}/profile-picture", response_model=User)
-async def upload_profile_picture(
+async def upload_profile_picture_endpoint(
     user_id: str,
     image: Annotated[UploadFile, File()],
     current_user_id: Annotated[str, Depends(get_current_user_id)],
@@ -69,11 +61,10 @@ async def upload_profile_picture(
     if current_user_id != user_id:
         raise HTTPException(status_code=403, detail="Você só pode fazer upload da sua própria foto de perfil")
 
-    from services.user_service import upload_profile_picture
-    return await upload_profile_picture(user_id, image, db)
+    return await user_service.upload_profile_picture(user_id, image, db)
 
 @router.patch("/{user_id}", response_model=User)
-async def update_user_profile(
+async def update_user_profile_endpoint(
     user_id: str,
     user_update: UserUpdate,
     current_user_id: Annotated[str, Depends(get_current_user_id)],
@@ -83,25 +74,22 @@ async def update_user_profile(
     if current_user_id != user_id:
         raise HTTPException(status_code=403, detail="You can only update your own profile")
 
-    from services.user_service import update_user
-    return await update_user(user_id, user_update, db)
+    return await user_service.update_user(user_id, user_update, db)
 
 @router.get("/{user_id}/events", response_model=List[Event])
-async def get_user_events_by_id(user_id: str, db: Session = Depends(get_db)):
+async def get_user_events_by_id_endpoint(user_id: str, db: Session = Depends(get_db)):
     """Get all events created by a specific user (public endpoint)"""
-    from services.event_service import get_user_events
     try:
-        return await get_user_events(user_id, db)
+        return await event_service.get_user_events(user_id, db)
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Error fetching user events: {str(e)}")
 
 # Generic route last
 @router.get("/{user_id}", response_model=User)
-async def get_user_by_id(user_id: str, db: Session = Depends(get_db)):
+async def get_user_by_id_endpoint(user_id: str, db: Session = Depends(get_db)):
     """Get user by ID"""
     print(f"GET /users/{user_id} called")
-    from services.user_service import get_user
-    user = await get_user(user_id, db)
+    user = await user_service.get_user(user_id, db)
     print(f"User found: {user is not None}")
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

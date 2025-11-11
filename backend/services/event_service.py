@@ -1,14 +1,18 @@
 from fastapi import HTTPException, UploadFile
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
+from datetime import datetime
+import uuid
+
 from models.event import EventModel
 from models.event_participant import EventParticipantModel
 from schemas.event import Event, EventCreate
 from schemas.event_participant import EventParticipant
-import uuid
-from datetime import datetime
-
-# Keep supabase import only for storage operations
+from utils.converters import (
+    event_model_to_schema,
+    event_models_to_schemas,
+    event_participant_models_to_schemas
+)
 from utils.supabase import supabase
 from .user_service import get_user
 
@@ -18,19 +22,7 @@ def get_event(event_id: str, db: Session) -> Optional[Event]:
     try:
         event_model = db.query(EventModel).filter(EventModel.id == event_id).first()
         if event_model:
-            return Event(
-                id=event_model.id,
-                host_user_id=event_model.host_user_id,
-                title=event_model.title,
-                description=event_model.description,
-                max_participants=event_model.max_participants,
-                current_participants=event_model.current_participants,
-                location=event_model.location,
-                event_date=event_model.event_date,
-                image_url=event_model.image_url,
-                price=event_model.price,
-                created_at=event_model.created_at
-            )
+            return event_model_to_schema(event_model)
         return None
     except Exception as e:
         print(f"Error getting event: {e}")
@@ -120,19 +112,7 @@ async def create_event(event: EventCreate, host_user_id: str, db: Session, image
         db.commit()
         db.refresh(event_model)
 
-        return Event(
-            id=event_model.id,
-            host_user_id=event_model.host_user_id,
-            title=event_model.title,
-            description=event_model.description,
-            max_participants=event_model.max_participants,
-            current_participants=event_model.current_participants,
-            location=event_model.location,
-            event_date=event_model.event_date,
-            image_url=event_model.image_url,
-            price=event_model.price,
-            created_at=event_model.created_at
-        )
+        return event_model_to_schema(event_model)
     except HTTPException:
         raise
     except Exception as e:
@@ -140,7 +120,7 @@ async def create_event(event: EventCreate, host_user_id: str, db: Session, image
         raise HTTPException(status_code=400, detail=f"Error creating event: {str(e)}")
 
 
-async def join_event(join_request, db: Session) -> dict:
+async def join_event(join_request: Dict[str, Any], db: Session) -> Dict[str, str]:
     """Join an existing event"""
     user_id = join_request["user_id"] if isinstance(join_request, dict) else join_request.user_id
     event_id = join_request["event_id"] if isinstance(join_request, dict) else join_request.event_id
@@ -197,22 +177,7 @@ async def list_events(db: Session) -> List[Event]:
     """List all available events"""
     try:
         event_models = db.query(EventModel).all()
-        events = []
-        for event_model in event_models:
-            events.append(Event(
-                id=event_model.id,
-                host_user_id=event_model.host_user_id,
-                title=event_model.title,
-                description=event_model.description,
-                max_participants=event_model.max_participants,
-                current_participants=event_model.current_participants,
-                location=event_model.location,
-                event_date=event_model.event_date,
-                image_url=event_model.image_url,
-                price=event_model.price,
-                created_at=event_model.created_at
-            ))
-        return events
+        return event_models_to_schemas(event_models)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching events: {str(e)}")
 
@@ -231,16 +196,7 @@ async def get_event_participants(event_id: str, db: Session) -> List[EventPartic
         participant_models = db.query(EventParticipantModel).filter(
             EventParticipantModel.event_id == event_id
         ).all()
-
-        participants = []
-        for participant_model in participant_models:
-            participants.append(EventParticipant(
-                id=participant_model.id,
-                event_id=participant_model.event_id,
-                participant_id=participant_model.participant_id,
-                joined_at=participant_model.joined_at
-            ))
-        return participants
+        return event_participant_models_to_schemas(participant_models)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching participants: {str(e)}")
 
@@ -251,23 +207,7 @@ async def get_user_events(user_id: str, db: Session) -> List[Event]:
         event_models = db.query(EventModel).filter(
             EventModel.host_user_id == user_id
         ).all()
-
-        events = []
-        for event_model in event_models:
-            events.append(Event(
-                id=event_model.id,
-                host_user_id=event_model.host_user_id,
-                title=event_model.title,
-                description=event_model.description,
-                max_participants=event_model.max_participants,
-                current_participants=event_model.current_participants,
-                location=event_model.location,
-                event_date=event_model.event_date,
-                image_url=event_model.image_url,
-                price=event_model.price,
-                created_at=event_model.created_at
-            ))
-        return events
+        return event_models_to_schemas(event_models)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching user events: {str(e)}")
 
@@ -287,22 +227,6 @@ async def get_user_joined_events(user_id: str, db: Session) -> List[Event]:
 
         # Then get the full event details for those events
         event_models = db.query(EventModel).filter(EventModel.id.in_(event_ids)).all()
-
-        events = []
-        for event_model in event_models:
-            events.append(Event(
-                id=event_model.id,
-                host_user_id=event_model.host_user_id,
-                title=event_model.title,
-                description=event_model.description,
-                max_participants=event_model.max_participants,
-                current_participants=event_model.current_participants,
-                location=event_model.location,
-                event_date=event_model.event_date,
-                image_url=event_model.image_url,
-                price=event_model.price,
-                created_at=event_model.created_at
-            ))
-        return events
+        return event_models_to_schemas(event_models)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching joined events: {str(e)}")

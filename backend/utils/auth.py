@@ -1,7 +1,10 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from utils.password import verify_token
+from sqlalchemy.orm import Session
 from typing import Annotated
+
+from utils.password import verify_token
+from utils.database import get_db
 
 security = HTTPBearer()
 
@@ -33,8 +36,8 @@ async def get_current_user_id(credentials: Annotated[HTTPAuthorizationCredential
 
 async def get_current_user(
     user_id: Annotated[str, Depends(get_current_user_id)],
-    db = Depends(None)
-) -> dict:
+    db: Annotated[Session, Depends(get_db)]
+):
     """
     Dependency to verify that the user exists in the database.
 
@@ -43,24 +46,14 @@ async def get_current_user(
         db: Database session
 
     Returns:
-        dict: User data from database
+        UserModel: User model from database
 
     Raises:
         HTTPException: If user doesn't exist
     """
     from services.user_service import get_user_by_id
-    from utils.database import get_db
 
-    # Get database session if not provided
-    if db is None:
-        db_gen = get_db()
-        db = next(db_gen)
-        try:
-            user = get_user_by_id(user_id, db)
-        finally:
-            db_gen.close()
-    else:
-        user = get_user_by_id(user_id, db)
+    user = get_user_by_id(user_id, db)
 
     if not user:
         raise HTTPException(
