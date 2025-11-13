@@ -1,19 +1,18 @@
-export interface Recipe {
+export interface Meal {
   id: string;
   user_id: string;
   title: string;
   description: string;
-  ingredients: string[];
-  instructions: string;
-  prep_time: number;
+  ingredients: string;
+  image_url?: string;
   created_at: string;
 }
 
-export interface RecipeCreate {
+export interface MealCreate {
   user_id: string;
   title: string;
   description: string;
-  ingredients: string[];
+  ingredients: string;
   instructions: string;
   prep_time: number;
 }

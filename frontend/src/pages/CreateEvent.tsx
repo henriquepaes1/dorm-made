@@ -7,6 +7,7 @@ import EventDetailsForm from "@/components/events/EventDetailsForm";
 import { Button } from "@/components/ui/button";
 import { useCreateEventForm } from "@/hooks/use-create-event-form";
 import { useImageUpload } from "@/hooks/use-image-upload";
+import { useMeals } from "@/hooks/use-meals";
 
 export default function CreateEvent() {
   const {
@@ -28,6 +29,8 @@ export default function CreateEvent() {
     handleImageChange: uploadImageChange,
     handleRemoveImage: uploadRemoveImage,
   } = useImageUpload();
+
+  const { meals, loading: mealsLoading, selectedMeal, selectMeal } = useMeals();
 
   // Sync image from useImageUpload to useCreateEventForm
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,7 +54,7 @@ export default function CreateEvent() {
   const canProceedToNext = () => {
     switch (currentStep) {
       case Step.MEAL:
-        return canGoNext();
+        return selectedMeal !== null;
       case Step.EVENT_DETAILS:
         return validateEventDetails();
       default:
@@ -62,7 +65,14 @@ export default function CreateEvent() {
   const renderStepContent = () => {
     switch (currentStep) {
       case Step.MEAL:
-        return <SelectMeal />;
+        return (
+          <SelectMeal
+            meals={meals}
+            loading={mealsLoading}
+            selectedMeal={selectedMeal}
+            onSelectMeal={selectMeal}
+          />
+        );
       case Step.EVENT_DETAILS:
         return (
           <EventDetailsForm
@@ -83,7 +93,7 @@ export default function CreateEvent() {
       <Header />
 
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <CreateEventProgressBar
               progressPercentage={getProgressPercentage()}

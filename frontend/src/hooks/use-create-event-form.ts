@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createEvent, getAuthToken } from "@/services";
 import { useToast } from "@/hooks/use-toast";
 import { isAxiosError } from "axios";
+import { Meal } from "@/types";
 
 export interface EventFormData {
   title: string;
@@ -31,6 +32,9 @@ export function useCreateEventForm() {
   // Image state
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
+  // Meal state
+  const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
+
   // Check authentication on mount
   useEffect(() => {
     const token = getAuthToken();
@@ -53,6 +57,10 @@ export function useCreateEventForm() {
 
   const setImage = useCallback((image: File | null) => {
     setSelectedImage(image);
+  }, []);
+
+  const setMeal = useCallback((meal: Meal | null) => {
+    setSelectedMeal(meal);
   }, []);
 
   const validateEventDetails = useCallback(() => {
