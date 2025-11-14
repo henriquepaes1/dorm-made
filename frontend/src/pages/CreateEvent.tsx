@@ -21,33 +21,20 @@ export default function CreateEvent() {
     getProgressPercentage,
   } = useCreateEvent();
 
-  const { formData, updateFormData, validateEventDetails, setImage, submitEvent } =
+  const { formData, updateFormData, validateEventDetails, submitEvent } =
     useCreateEventForm();
 
   const {
+    selectedImage,
     imagePreview,
-    handleImageChange: uploadImageChange,
-    handleRemoveImage: uploadRemoveImage,
+    handleImageChange,
+    handleRemoveImage,
   } = useImageUpload();
 
   const { meals, loading: mealsLoading, selectedMeal, selectMeal } = useMeals();
 
-  // Sync image from useImageUpload to useCreateEventForm
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    uploadImageChange(e);
-    const file = e.target.files?.[0];
-    if (file) {
-      setImage(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    uploadRemoveImage();
-    setImage(null);
-  };
-
   const handleFinalize = async () => {
-    await submitEvent();
+    await submitEvent(selectedImage);
   };
 
   // Check if we can proceed to next step based on current step validation

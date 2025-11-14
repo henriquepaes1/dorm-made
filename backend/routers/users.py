@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 
 from schemas.user import User, UserCreate, UserLogin, UserUpdate, LoginResponse
 from schemas.event import Event
+from schemas.meal import Meal
 from utils.auth import get_current_user_id
 from utils.database import get_db
-from services import user_service, event_service
+from services import user_service, event_service, meal_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -35,6 +36,14 @@ async def get_my_joined_events_endpoint(
 ):
     """Get all events that the authenticated user has joined"""
     return await event_service.get_user_joined_events(current_user_id, db)
+
+@router.get("/me/meals", response_model=List[Meal])
+async def get_my_meals_endpoint(
+    current_user_id: Annotated[str, Depends(get_current_user_id)],
+    db: Session = Depends(get_db)
+):
+    """Get all meals created by the authenticated user"""
+    return await meal_service.get_user_meals(current_user_id, db)
 
 @router.get("/test")
 async def test_endpoint():

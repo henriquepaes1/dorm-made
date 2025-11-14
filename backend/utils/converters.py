@@ -6,9 +6,11 @@ from typing import List
 from models.user import UserModel
 from models.event import EventModel
 from models.event_participant import EventParticipantModel
+from models.meal import MealModel
 from schemas.user import User
 from schemas.event import Event
 from schemas.event_participant import EventParticipant
+from schemas.meal import Meal
 
 
 def user_model_to_schema(user_model: UserModel) -> User:
@@ -64,3 +66,21 @@ def event_models_to_schemas(event_models: List[EventModel]) -> List[Event]:
 def event_participant_models_to_schemas(participant_models: List[EventParticipantModel]) -> List[EventParticipant]:
     """Convert a list of EventParticipantModels to EventParticipant schemas"""
     return [event_participant_model_to_schema(participant) for participant in participant_models]
+
+
+def meal_model_to_schema(meal_model: MealModel) -> Meal:
+    """Convert MealModel to Meal schema"""
+    return Meal(
+        id=meal_model.id,
+        user_id=meal_model.user_id,
+        title=meal_model.title,
+        description=meal_model.description,
+        ingredients=meal_model.ingredients,
+        image_url=meal_model.image_url,
+        created_at=meal_model.created_at
+    )
+
+
+def meal_models_to_schemas(meal_models: List[MealModel]) -> List[Meal]:
+    """Convert a list of MealModels to Meal schemas"""
+    return [meal_model_to_schema(meal) for meal in meal_models]

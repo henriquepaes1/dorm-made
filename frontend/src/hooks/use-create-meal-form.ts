@@ -1,32 +1,26 @@
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createEvent, getAuthToken } from "@/services";
+import { createMeal, getAuthToken } from "@/services";
 import { useToast } from "@/hooks/use-toast";
 import { isAxiosError } from "axios";
 import { Meal } from "@/types";
 
-export interface EventFormData {
-  title: string;
+export interface MealFormData {
+  name: string;
   description: string;
-  max_participants: string;
-  event_date: string;
-  location: string;
-  price: string;
+  ingredients: string;
 }
 
-export function useCreateEventForm() {
+export function useCreateMealForm() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Form state
-  const [formData, setFormData] = useState<EventFormData>({
-    title: "",
+  const [formData, setFormData] = useState<MealFormData>({
+    name: "",
     description: "",
-    max_participants: "",
-    event_date: "",
-    location: "",
-    price: "",
+    ingredients: "",
   });
 
   // Meal state
@@ -40,7 +34,7 @@ export function useCreateEventForm() {
     if (!token || !user) {
       toast({
         title: "Authentication Required",
-        description: "Please log in to create events",
+        description: "Please log in to create meals",
         variant: "destructive",
         duration: 1500,
       });
@@ -48,30 +42,28 @@ export function useCreateEventForm() {
     }
   }, [navigate, toast]);
 
-  const updateFormData = useCallback((updates: Partial<EventFormData>) => {
+  const updateFormData = useCallback((updates: Partial<MealFormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  const validateEventDetails = useCallback(() => {
-    const requiredFields: (keyof EventFormData)[] = [
-      "title",
-      "description",
-      "max_participants",
-      "event_date",
-      "location",
-    ];
+  const setMeal = useCallback((meal: Meal | null) => {
+    setSelectedMeal(meal);
+  }, []);
+
+  const validateMealDetails = useCallback(() => {
+    const requiredFields: (keyof MealFormData)[] = ["name", "description", "ingredients"];
     return requiredFields.every((field) => {
       const value = formData[field];
       return value && value.trim() !== "";
     });
   }, [formData]);
 
-  const submitEvent = useCallback(async (image: File | null = null) => {
+  const submitMeal = useCallback(async (image: File | null = null) => {
     const currentUser = localStorage.getItem("currentUser");
     if (!currentUser) {
       toast({
         title: "Please Sign In",
-        description: "You need to sign in to create events",
+        description: "You need to sign in to create meals",
         variant: "destructive",
         duration: 1500,
       });
@@ -79,7 +71,7 @@ export function useCreateEventForm() {
     }
 
     // Validate required fields
-    if (!validateEventDetails()) {
+    if (!validateMealDetails()) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -97,7 +89,7 @@ export function useCreateEventForm() {
       if (!token) {
         toast({
           title: "Authentication Required",
-          description: "Please log in to create events",
+          description: "Please log in to create meals",
           variant: "destructive",
           duration: 1500,
         });
@@ -107,27 +99,20 @@ export function useCreateEventForm() {
 
       // Create FormData to handle both text fields and image upload
       const formDataToSend = new FormData();
-      formDataToSend.append("title", formData.title);
+      formDataToSend.append("name", formData.name);
       formDataToSend.append("description", formData.description);
-      formDataToSend.append("max_participants", formData.max_participants);
-      formDataToSend.append("event_date", formData.event_date);
-      formDataToSend.append("location", formData.location);
-
-      // Add price if provided
-      if (formData.price && formData.price.trim() !== "") {
-        formDataToSend.append("price", formData.price);
-      }
+      formDataToSend.append("ingredients", formData.ingredients);
 
       // Add image if provided
       if (image) {
         formDataToSend.append("image", image);
       }
 
-      await createEvent(formDataToSend);
+      await createMeal(formDataToSend);
 
       toast({
         title: "Success!",
-        description: "Event created successfully!",
+        description: "Meal created successfully!",
         className: "bg-green-500 text-white border-green-600",
         duration: 1500,
       });
@@ -135,7 +120,7 @@ export function useCreateEventForm() {
       navigate("/explore");
     } catch (error) {
       if (isAxiosError(error)) {
-        console.error("CreateEvent error:", error);
+        console.error("CreateMeal error:", error);
         console.error("Error response:", error.response);
         console.error("Error status:", error.response?.status);
         console.error("Error data:", error.response?.data);
@@ -143,20 +128,20 @@ export function useCreateEventForm() {
 
       toast({
         title: "Error",
-        description: error.response?.data?.detail || "Failed to create event",
+        description: error.response?.data?.detail || "Failed to create meal",
         variant: "destructive",
         duration: 1500,
       });
     } finally {
       setLoading(false);
     }
-  }, [formData, toast, navigate, validateEventDetails]);
+  }, [formData, toast, navigate, validateMealDetails]);
 
   return {
     loading,
     formData,
     updateFormData,
-    validateEventDetails,
-    submitEvent,
+    validateMealDetails,
+    submitMeal,
   };
 }

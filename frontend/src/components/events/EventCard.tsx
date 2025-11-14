@@ -12,7 +12,10 @@ interface EventCardProps {
 
 export function EventCard({ event, activeTab, onJoinEvent }: EventCardProps) {
   return (
-    <Card key={event.id} className="flex flex-col over:shadow-lg transition-shadow min-w-[85vw] lg:min-w-0">
+    <Card
+      key={event.id}
+      className="flex flex-col over:shadow-lg transition-shadow min-w-[85vw] lg:min-w-0"
+    >
       <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
         {event.image_url ? (
           <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />

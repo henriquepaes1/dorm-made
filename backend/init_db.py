@@ -7,6 +7,7 @@ from utils.database import engine, Base
 from models.user import UserModel
 from models.event import EventModel
 from models.event_participant import EventParticipantModel
+from models.meal import MealModel
 
 
 def init_database():

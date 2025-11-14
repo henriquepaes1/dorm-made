@@ -1,17 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { createEvent, getAuthToken } from "@/services";
-import { useToast } from "@/hooks/use-toast";
-import { isAxiosError } from "axios";
-
-interface EventFormData {
-  title: string;
-  description: string;
-  max_participants: string;
-  event_date: string;
-  location: string;
-  price: string;
-}
+import { useState, useCallback, useMemo } from "react";
 
 export enum Step {
   MEAL = "MEAL",

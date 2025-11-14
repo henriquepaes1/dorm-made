@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from routers import users, events
+from routers import users, events, meals
 
 load_dotenv()
 
@@ -36,6 +36,7 @@ async def log_requests(request: Request, call_next):
 # Include routers
 app.include_router(users.router)
 app.include_router(events.router)
+app.include_router(meals.router)
 
 @app.get("/")
 async def root():
