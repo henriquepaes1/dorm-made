@@ -51,10 +51,10 @@ export default function Explore() {
   }
 
   return (
-    <div className="bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8 flex items-start justify-between">
           <div className="flex-1">
