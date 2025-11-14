@@ -3,25 +3,24 @@ from pydantic.alias_generators import to_camel
 from datetime import datetime
 from typing import Optional
 
-class EventBase(BaseModel):
-    meal_id: str
+
+class MealBase(BaseModel):
     title: str
     description: str
-    max_participants: int
-    location: str
-    price: Optional[float] = None
+    ingredients: str
 
-class EventCreate(EventBase):
-    event_date: str  # Accept as string from frontend
 
-class Event(EventBase):
+class MealCreate(MealBase):
+    """Schema for creating a meal (used with FormData)"""
+    pass
+
+
+class Meal(MealBase):
+    """Schema for returning meal data"""
     id: str
-    host_user_id: str
-    meal_name: str
-    current_participants: int
-    event_date: datetime  # Store as datetime
-    created_at: datetime
+    user_id: str
     image_url: Optional[str] = None
+    created_at: datetime
 
     model_config = ConfigDict(
         from_attributes=True,

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { createUser, loginUser, setAuthToken } from "@/services";
 import { useToast } from "@/hooks/use-toast";
+import { isAxiosError } from "axios";
 
 interface SignUpFormData {
   firstName: string;
@@ -59,16 +60,13 @@ export function useAuth(): UseAuthReturn {
         });
 
         navigate("/login");
-      } catch (error: any) {
-        let errorMessage = "Failed to create account";
+      } catch (error) {
+        const errorMessage = "Failed to create account";
 
-        if (error.response?.data?.detail) {
-          // Handle Pydantic validation errors
-          if (Array.isArray(error.response.data.detail)) {
-            errorMessage = error.response.data.detail.map((err: any) => err.msg).join(", ");
-          } else {
-            errorMessage = error.response.data.detail;
-          }
+        if (isAxiosError(error)) {
+          console.error("Error response:", error.response);
+          console.error("Error status:", error.response?.status);
+          console.error("Error data:", error.response?.data);
         }
 
         toast({
@@ -123,16 +121,13 @@ export function useAuth(): UseAuthReturn {
         });
 
         navigate("/explore");
-      } catch (error: any) {
-        let errorMessage = "Failed to log in";
+      } catch (error) {
+        const errorMessage = "Failed to log in";
 
-        if (error.response?.data?.detail) {
-          // Handle Pydantic validation errors
-          if (Array.isArray(error.response.data.detail)) {
-            errorMessage = error.response.data.detail.map((err: any) => err.msg).join(", ");
-          } else {
-            errorMessage = error.response.data.detail;
-          }
+        if (isAxiosError(error)) {
+          console.error("Error response:", error.response);
+          console.error("Error status:", error.response?.status);
+          console.error("Error data:", error.response?.data);
         }
 
         toast({

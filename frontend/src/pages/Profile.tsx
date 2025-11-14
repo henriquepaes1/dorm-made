@@ -9,19 +9,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useProfile } from "@/hooks/use-profile";
 import { useProfilePhoto } from "@/hooks/use-profile-photo";
-import { EventCard } from "@/components/events/EventCard";
+import { ProfileTabs } from "@/components/user/ProfileTabs";
 import {
   GraduationCap,
   User as UserIcon,
   ArrowLeft,
-  UtensilsCrossed,
   Edit2,
   Save,
   X,
   Upload,
   Image as ImageIcon,
 } from "lucide-react";
-import { User } from "@/types";
 
 export default function Profile() {
   const { userId } = useParams<{ userId: string }>();
@@ -33,8 +31,6 @@ export default function Profile() {
     isEditing,
     editingUser,
     saving,
-    userEvents,
-    loadingEvents,
     setIsEditing,
     updateEditingUser,
     handleSave: saveProfile,
@@ -304,54 +300,14 @@ export default function Profile() {
             </CardContent>
           </Card>
 
-          {/* My Meals Section */}
+          {/* Tabs Section */}
           <Card className="mb-6">
             <CardContent className="p-4 lg:p-6">
-              <div className="mb-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary-glow/20 flex items-center justify-center">
-                    <UtensilsCrossed className="h-5 w-5 text-primary" />
-                  </div>
-                  <h2 className="text-xl lg:text-2xl font-bold">
-                    {isOwnProfile() ? "My Meals" : "Meals"}
-                  </h2>
-                </div>
-                <p className="text-sm text-muted-foreground">Events created by me</p>
-              </div>
-
-              {loadingEvents ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading events...</p>
-                  </div>
-                </div>
-              ) : userEvents.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-4xl mb-4">🍽️</div>
-                  <h3 className="text-lg font-semibold mb-2">No events created yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {user.id === JSON.parse(localStorage.getItem("currentUser") || "{}")?.id
-                      ? "Create your first culinary event to get started!"
-                      : `${user.name} hasn't created any events yet.`}
-                  </p>
-                  {user.id === JSON.parse(localStorage.getItem("currentUser") || "{}")?.id && (
-                    <Button asChild>
-                      <Link to="/create-event">Create Event</Link>
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
-                  {userEvents.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      activeTab="profile"
-                    />
-                  ))}
-                </div>
-              )}
+              <ProfileTabs
+                userId={userId || ""}
+                isOwnProfile={isOwnProfile()}
+                userName={user.name}
+              />
             </CardContent>
           </Card>
         </div>

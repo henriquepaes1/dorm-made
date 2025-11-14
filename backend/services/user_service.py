@@ -1,168 +1,157 @@
 from fastapi import HTTPException, UploadFile
 from typing import Optional, List
-from database import supabase
-from schemas.user import User, UserCreate, UserLogin, UserUpdate, Token, LoginResponse
-from utils.password import hash_password, verify_password, create_access_token
-import uuid
+from sqlalchemy.orm import Session
 from datetime import datetime
+import uuid
 
-async def get_user(user_id: str) -> Optional[User]:
-    """Get user by ID from Supabase"""
+from models.user import UserModel
+from schemas.user import User, UserCreate, UserLogin, UserUpdate, LoginResponse
+from utils.password import hash_password, verify_password, create_access_token
+from utils.converters import user_model_to_schema, user_models_to_schemas
+from utils.supabase import supabase
+
+
+async def get_user(user_id: str, db: Session) -> Optional[User]:
+    """Get user by ID from database"""
     try:
-        result = supabase.table("users").select("*").eq("id", user_id).execute()
-        if result.data and len(result.data) > 0:
-            user_data = result.data[0]
-            # Ensure optional fields are handled correctly
-            user_data.setdefault("university", None)
-            user_data.setdefault("description", None)
-            user_data.setdefault("profile_picture", None)
-            return User(**user_data)
+        user_model = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if user_model:
+            return user_model_to_schema(user_model)
         return None
     except Exception as e:
         print(f"Error getting user: {e}")
-        print(f"User ID: {user_id}")
         import traceback
         traceback.print_exc()
         return None
 
-async def create_user(user: UserCreate) -> User:
+
+async def create_user(user: UserCreate, db: Session) -> User:
     """Create a new user"""
     try:
-        user_data = user.model_dump()
-        hashed_password = hash_password(user_data.pop("password"))
-        user_data["hashed_password"] = hashed_password
+        # Check if user with email already exists
+        existing_user = db.query(UserModel).filter(UserModel.email == user.email).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-        result = supabase.table("users").insert(user_data).execute()
-        if result.data:
-            return User(**result.data[0])
-        raise HTTPException(status_code=400, detail="Failed to create user")
+        # Hash password
+        hashed_password = hash_password(user.password)
+
+        # Create new user model
+        user_model = UserModel(
+            id=str(uuid.uuid4()),
+            name=user.name,
+            email=user.email,
+            hashed_password=hashed_password,
+            university=user.university,
+            description=user.description
+        )
+
+        db.add(user_model)
+        db.commit()
+        db.refresh(user_model)
+
+        return user_model_to_schema(user_model)
+    except HTTPException:
+        raise
     except Exception as e:
+        db.rollback()
+        print(str(e))
         raise HTTPException(status_code=400, detail=f"Error creating user: {str(e)}")
 
-def get_user_by_email(email: str) -> Optional[dict]:
-    """Get user by email from Supabase including hashed_password"""
+
+def get_user_by_email(email: str, db: Session) -> Optional[UserModel]:
+    """Get user by email from database - returns model for auth purposes"""
     try:
-        result = supabase.table("users").select("*").eq("email", email).execute()
-        if result.data:
-            return result.data[0]
-        return None
+        return db.query(UserModel).filter(UserModel.email == email).first()
     except Exception as e:
         print(f"Error getting user by email: {e}")
         return None
 
-def get_user_by_id(user_id: str) -> Optional[dict]:
-    """Get user by ID from Supabase - returns raw dict for auth purposes"""
+
+def get_user_by_id(user_id: str, db: Session) -> Optional[UserModel]:
+    """Get user by ID from database - returns model for auth purposes"""
     try:
-        result = supabase.table("users").select("*").eq("id", user_id).execute()
-        if result.data:
-            return result.data[0]
-        return None
+        return db.query(UserModel).filter(UserModel.id == user_id).first()
     except Exception as e:
         print(f"Error getting user by ID: {e}")
         return None
 
-async def authenticate_user(login_data: UserLogin) -> LoginResponse:
+
+async def authenticate_user(login_data: UserLogin, db: Session) -> LoginResponse:
     """Authenticate user and return JWT token"""
-    user = get_user_by_email(login_data.email)
-    if not user:
+    user_model = get_user_by_email(login_data.email, db)
+    if not user_model:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    if not verify_password(login_data.password, user["hashed_password"]):
+    if not verify_password(login_data.password, user_model.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    print(f"Creating token with user ID: {user['id']} (type: {type(user['id'])})")
-    access_token = create_access_token(data={"userId": user["id"]})
-    
-    # Create User object without hashed_password
-    user_obj = User(
-        id=user["id"],
-        name=user["name"],
-        email=user["email"],
-        university=user.get("university"),
-        description=user.get("description"),
-        profile_picture=user.get("profile_picture"),
-        created_at=user["created_at"]
-    )
-    
+    print(f"Creating token with user ID: {user_model.id} (type: {type(user_model.id)})")
+    access_token = create_access_token(data={"userId": user_model.id})
+
     return LoginResponse(
-        access_token=access_token, 
+        access_token=access_token,
         token_type="bearer",
-        user=user_obj
+        user=user_model_to_schema(user_model)
     )
 
-async def update_user(user_id: str, user_update: UserUpdate) -> User:
+
+async def update_user(user_id: str, user_update: UserUpdate, db: Session) -> User:
     """Update user information"""
     try:
-        # Prepare update data, only including fields that are not None
-        update_data = {}
-        if user_update.university is not None:
-            update_data["university"] = user_update.university
-        if user_update.description is not None:
-            update_data["description"] = user_update.description
-        if user_update.profile_picture is not None:
-            update_data["profile_picture"] = user_update.profile_picture
-
-        if not update_data:
-            # If no fields to update, just return the current user
-            user = await get_user(user_id)
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
-            return user
-
-        # Update in Supabase
-        result = supabase.table("users").update(update_data).eq("id", user_id).execute()
-        
-        if not result.data:
+        user_model = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if not user_model:
             raise HTTPException(status_code=404, detail="User not found")
-        
-        user_data = result.data[0]
-        # Ensure optional fields are handled correctly
-        user_data.setdefault("university", None)
-        user_data.setdefault("description", None)
-        user_data.setdefault("profile_picture", None)
-        
-        return User(**user_data)
+
+        # Update fields if provided
+        if user_update.university is not None:
+            user_model.university = user_update.university
+        if user_update.description is not None:
+            user_model.description = user_update.description
+        if user_update.profile_picture is not None:
+            user_model.profile_picture = user_update.profile_picture
+
+        db.commit()
+        db.refresh(user_model)
+
+        return user_model_to_schema(user_model)
     except HTTPException:
         raise
     except Exception as e:
+        db.rollback()
         print(f"Error updating user: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Error updating user: {str(e)}")
 
-async def search_users(query: str, limit: int = 10) -> List[User]:
+
+async def search_users(query: str, db: Session, limit: int = 10) -> List[User]:
     """Search users by name"""
     try:
         if not query or len(query.strip()) < 2:
             return []
-        
-        # Use ilike for case-insensitive search in Supabase
-        result = supabase.table("users").select("*").ilike("name", f"%{query.strip()}%").limit(limit).execute()
-        
-        users = []
-        if result.data:
-            for user_data in result.data:
-                # Ensure optional fields are handled correctly
-                user_data.setdefault("university", None)
-                user_data.setdefault("description", None)
-                user_data.setdefault("profile_picture", None)
-                users.append(User(**user_data))
-        
-        return users
+
+        # Use ilike for case-insensitive search
+        user_models = db.query(UserModel).filter(
+            UserModel.name.ilike(f"%{query.strip()}%")
+        ).limit(limit).all()
+
+        return user_models_to_schemas(user_models)
     except Exception as e:
         print(f"Error searching users: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=400, detail=f"Error searching users: {str(e)}")
 
-async def upload_profile_picture(user_id: str, image: UploadFile) -> User:
+
+async def upload_profile_picture(user_id: str, image: UploadFile, db: Session) -> User:
     """Upload a profile picture to Supabase Storage and update user profile"""
     try:
         # Validate file type (only JPEG and PNG)
         allowed_types = ["image/jpeg", "image/jpg", "image/png"]
         if image.content_type not in allowed_types:
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail="Tipo de arquivo inválido. Apenas imagens JPEG e PNG são permitidas."
             )
 
@@ -170,12 +159,12 @@ async def upload_profile_picture(user_id: str, image: UploadFile) -> User:
         contents = await image.read()
         if len(contents) > 5 * 1024 * 1024:  # 5MB in bytes
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail="Tamanho do arquivo excede o limite de 5MB."
             )
 
         # Get current user to check for existing profile picture
-        current_user = await get_user(user_id)
+        current_user = await get_user(user_id, db)
         if not current_user:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
@@ -184,7 +173,6 @@ async def upload_profile_picture(user_id: str, image: UploadFile) -> User:
         if old_picture_url:
             try:
                 # Extract filename from URL
-                # URL format: https://project.supabase.co/storage/v1/object/public/profile-pictures/filename
                 if "profile-pictures/" in old_picture_url:
                     old_filename = old_picture_url.split("profile-pictures/")[-1].split("?")[0]
                     supabase.storage.from_("profile-pictures").remove([old_filename])
@@ -207,7 +195,7 @@ async def upload_profile_picture(user_id: str, image: UploadFile) -> User:
         public_url = supabase.storage.from_("profile-pictures").get_public_url(unique_filename)
 
         # Update user profile with new picture URL
-        updated_user = await update_user(user_id, UserUpdate(profile_picture=public_url))
+        updated_user = await update_user(user_id, UserUpdate(profile_picture=public_url), db)
 
         return updated_user
     except HTTPException:

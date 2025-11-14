@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getUser, updateUser, getUserEvents } from "@/services";
 import { User, Event } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { isAxiosError } from "axios";
 
 interface UseProfileReturn {
   user: User | null;
@@ -37,9 +38,12 @@ export function useProfile(userId?: string): UseProfileReturn {
       setLoadingEvents(true);
       const events = await getUserEvents(targetUserId);
       setUserEvents(events);
-    } catch (error: any) {
-      console.error("Error loading user events:", error);
-      // Don't show toast error - user might not have events
+    } catch (error) {
+      if (isAxiosError(error)) {
+        console.error("Error response:", error.response);
+        console.error("Error status:", error.response?.status);
+        console.error("Error data:", error.response?.data);
+      }
       setUserEvents([]);
     } finally {
       setLoadingEvents(false);
@@ -59,10 +63,12 @@ export function useProfile(userId?: string): UseProfileReturn {
         setEditingUser({ ...userData });
         // Load events after user is loaded
         await loadUserEvents(userData.id);
-      } catch (error: any) {
-        console.error("Error loading user:", error);
-        console.error("Error response:", error.response?.data);
-        console.error("Error status:", error.response?.status);
+      } catch (error) {
+        if (isAxiosError(error)) {
+          console.error("Error response:", error.response);
+          console.error("Error status:", error.response?.status);
+          console.error("Error data:", error.response?.data);
+        }
 
         // Fallback to localStorage if backend fails
         const currentUserStr = localStorage.getItem("currentUser");
@@ -124,8 +130,12 @@ export function useProfile(userId?: string): UseProfileReturn {
           className: "bg-green-500 text-white border-green-600",
           duration: 1500,
         });
-      } catch (error: any) {
-        console.error("Error updating user:", error);
+      } catch (error) {
+        if (isAxiosError(error)) {
+          console.error("Error response:", error.response);
+          console.error("Error status:", error.response?.status);
+          console.error("Error data:", error.response?.data);
+        }
         toast({
           title: "Erro",
           description: error.response?.data?.detail || "Não foi possível atualizar o perfil",
