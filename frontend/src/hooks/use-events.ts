@@ -95,7 +95,7 @@ export function useEvents(): UseEventsReturn {
 
       try {
         setLoading(true);
-        await joinEventApi({ event_id: eventId, user_id: user.id });
+        await joinEventApi({ eventId: eventId, userId: user.id });
 
         toast({
           title: "Success",

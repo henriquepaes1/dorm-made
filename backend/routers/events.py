@@ -14,7 +14,7 @@ router = APIRouter(prefix="/events", tags=["events"])
 class JoinEventRequest(BaseModel):
     event_id: str
 
-@router.post("/", response_model=Event)
+@router.post("/", response_model=Event, response_model_by_alias=True)
 async def create_event_endpoint(
     title: Annotated[str, Form()],
     description: Annotated[str, Form()],
@@ -63,12 +63,12 @@ async def join_event_endpoint(
     }
     return await event_service.join_event(full_request, db)
 
-@router.get("/", response_model=List[Event])
+@router.get("/", response_model=List[Event], response_model_by_alias=True)
 async def list_events_endpoint(db: Session = Depends(get_db)):
     """List all available events"""
     return await event_service.list_events(db)
 
-@router.get("/{event_id}", response_model=Event)
+@router.get("/{event_id}", response_model=Event, response_model_by_alias=True)
 async def get_event_details_endpoint(event_id: str, db: Session = Depends(get_db)):
     """Get details of a specific event"""
     return await event_service.get_event_details(event_id, db)

@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 from datetime import datetime
 from typing import Optional
 
@@ -16,9 +17,15 @@ class EventCreate(EventBase):
 class Event(EventBase):
     id: str
     host_user_id: str
+    meal_name: str
     current_participants: int
     event_date: datetime  # Store as datetime
     created_at: datetime
     image_url: Optional[str] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        alias_generator=to_camel,
+        populate_by_name=True,
+        by_alias=True
+    )

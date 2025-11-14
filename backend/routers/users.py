@@ -21,7 +21,7 @@ async def login_endpoint(login_data: UserLogin, db: Session = Depends(get_db)):
     """Authenticate user and return JWT token"""
     return await user_service.authenticate_user(login_data, db)
 
-@router.get("/me/events", response_model=List[Event])
+@router.get("/me/events", response_model=List[Event], response_model_by_alias=True)
 async def get_my_events_endpoint(
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Session = Depends(get_db)
@@ -29,7 +29,7 @@ async def get_my_events_endpoint(
     """Get all events created by the authenticated user"""
     return await event_service.get_user_events(current_user_id, db)
 
-@router.get("/me/joined-events", response_model=List[Event])
+@router.get("/me/joined-events", response_model=List[Event], response_model_by_alias=True)
 async def get_my_joined_events_endpoint(
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Session = Depends(get_db)
@@ -37,7 +37,7 @@ async def get_my_joined_events_endpoint(
     """Get all events that the authenticated user has joined"""
     return await event_service.get_user_joined_events(current_user_id, db)
 
-@router.get("/me/meals", response_model=List[Meal])
+@router.get("/me/meals", response_model=List[Meal], response_model_by_alias=True)
 async def get_my_meals_endpoint(
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Session = Depends(get_db)
@@ -85,7 +85,7 @@ async def update_user_profile_endpoint(
 
     return await user_service.update_user(user_id, user_update, db)
 
-@router.get("/{user_id}/events", response_model=List[Event])
+@router.get("/{user_id}/events", response_model=List[Event], response_model_by_alias=True)
 async def get_user_events_by_id_endpoint(user_id: str, db: Session = Depends(get_db)):
     """Get all events created by a specific user (public endpoint)"""
     try:

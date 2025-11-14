@@ -15,6 +15,7 @@ from utils.converters import (
 )
 from utils.supabase import supabase
 from .user_service import get_user
+from .meal_service import get_meal_name
 
 
 def get_event(event_id: str, db: Session) -> Optional[Event]:
@@ -22,7 +23,8 @@ def get_event(event_id: str, db: Session) -> Optional[Event]:
     try:
         event_model = db.query(EventModel).filter(EventModel.id == event_id).first()
         if event_model:
-            return event_model_to_schema(event_model)
+            meal_name = get_meal_name(event_model.meal_id, db)
+            return event_model_to_schema(event_model, meal_name)
         return None
     except Exception as e:
         print(f"Error getting event: {e}")
@@ -113,7 +115,8 @@ async def create_event(event: EventCreate, host_user_id: str, db: Session, image
         db.commit()
         db.refresh(event_model)
 
-        return event_model_to_schema(event_model)
+        meal_name = get_meal_name(event_model.meal_id, db)
+        return event_model_to_schema(event_model, meal_name)
     except HTTPException:
         raise
     except Exception as e:
@@ -178,7 +181,12 @@ async def list_events(db: Session) -> List[Event]:
     """List all available events"""
     try:
         event_models = db.query(EventModel).all()
-        return event_models_to_schemas(event_models)
+        # Convert each event with its meal name
+        events = []
+        for event_model in event_models:
+            meal_name = get_meal_name(event_model.meal_id, db)
+            events.append(event_model_to_schema(event_model, meal_name))
+        return events
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching events: {str(e)}")
 
@@ -208,7 +216,12 @@ async def get_user_events(user_id: str, db: Session) -> List[Event]:
         event_models = db.query(EventModel).filter(
             EventModel.host_user_id == user_id
         ).all()
-        return event_models_to_schemas(event_models)
+        # Convert each event with its meal name
+        events = []
+        for event_model in event_models:
+            meal_name = get_meal_name(event_model.meal_id, db)
+            events.append(event_model_to_schema(event_model, meal_name))
+        return events
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching user events: {str(e)}")
 
@@ -228,6 +241,11 @@ async def get_user_joined_events(user_id: str, db: Session) -> List[Event]:
 
         # Then get the full event details for those events
         event_models = db.query(EventModel).filter(EventModel.id.in_(event_ids)).all()
-        return event_models_to_schemas(event_models)
+        # Convert each event with its meal name
+        events = []
+        for event_model in event_models:
+            meal_name = get_meal_name(event_model.meal_id, db)
+            events.append(event_model_to_schema(event_model, meal_name))
+        return events
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching joined events: {str(e)}")

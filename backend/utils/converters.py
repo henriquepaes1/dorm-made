@@ -26,12 +26,13 @@ def user_model_to_schema(user_model: UserModel) -> User:
     )
 
 
-def event_model_to_schema(event_model: EventModel) -> Event:
+def event_model_to_schema(event_model: EventModel, meal_name: str = "") -> Event:
     """Convert EventModel to Event schema"""
     return Event(
         id=event_model.id,
         host_user_id=event_model.host_user_id,
         meal_id=event_model.meal_id,
+        meal_name=meal_name,
         title=event_model.title,
         description=event_model.description,
         max_participants=event_model.max_participants,

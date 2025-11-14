@@ -115,3 +115,12 @@ async def get_meal(meal_id: str, db: Session) -> Meal:
         raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching meal: {str(e)}")
+
+
+def get_meal_name(meal_id: str, db: Session) -> str:
+    """Get meal name by ID - returns empty string if not found"""
+    try:
+        meal_model = db.query(MealModel).filter(MealModel.id == meal_id).first()
+        return meal_model.title if meal_model else ""
+    except Exception:
+        return ""

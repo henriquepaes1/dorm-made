@@ -10,7 +10,7 @@ from services import meal_service
 router = APIRouter(prefix="/meals", tags=["meals"])
 
 
-@router.post("/", response_model=Meal, status_code=201)
+@router.post("/", response_model=Meal, status_code=201, response_model_by_alias=True)
 async def create_meal_endpoint(
     name: Annotated[str, Form()],
     description: Annotated[str, Form()],
@@ -30,7 +30,7 @@ async def create_meal_endpoint(
     )
 
 
-@router.get("/{meal_id}", response_model=Meal)
+@router.get("/{meal_id}", response_model=Meal, response_model_by_alias=True)
 async def get_meal_endpoint(
     meal_id: str,
     db: Session = Depends(get_db)

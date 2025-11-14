@@ -1,28 +1,29 @@
 export interface Event {
   id: string;
-  host_user_id: string;
-  recipe_id: string;
+  hostUserId: string;
+  mealId: string;
+  mealName: string;
   title: string;
   description: string;
-  max_participants: number;
-  current_participants: number;
-  event_date: string;
+  maxParticipants: number;
+  currentParticipants: number;
+  eventDate: string;
   location: string;
-  image_url?: string;
+  imageUrl?: string;
   price?: number;
-  created_at: string;
+  createdAt: string;
 }
 
 export interface EventCreate {
   title: string;
   description: string;
-  max_participants: number;
-  event_date: string;
+  maxParticipants: number;
+  eventDate: string;
   location: string;
   price?: number;
 }
 
 export interface JoinEventRequest {
-  user_id: string;
-  event_id: string;
+  userId: string;
+  eventId: string;
 }

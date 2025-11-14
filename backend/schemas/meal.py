@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 from datetime import datetime
 from typing import Optional
 
@@ -21,4 +22,9 @@ class Meal(MealBase):
     image_url: Optional[str] = None
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        alias_generator=to_camel,
+        populate_by_name=True,
+        by_alias=True
+    )
