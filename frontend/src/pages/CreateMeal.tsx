@@ -142,7 +142,7 @@ const CreateMeal = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/explore")}
+                onClick={() => navigate(-1)}
                 className="flex-1"
               >
                 Cancel
