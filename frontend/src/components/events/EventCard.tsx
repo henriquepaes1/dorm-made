@@ -1,10 +1,11 @@
 import { Event } from "@/types";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
-import { Clock, MapPin, Users, UtensilsCrossed } from "lucide-react";
+import { Clock, MapPin, User, Users, UtensilsCrossed } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useMealDialog } from "@/hooks/use-meal-dialog";
 import { MealDialog } from "../meals/MealDialog";
+import { useNavigate } from "react-router-dom";
 
 interface EventCardProps {
   event: Event;
@@ -14,6 +15,7 @@ interface EventCardProps {
 
 export function EventCard({ event, activeTab, onJoinEvent }: EventCardProps) {
   const { isOpen, meal, loading, error, openDialog, closeDialog } = useMealDialog();
+  const navigate = useNavigate();
 
   const handleMealClick = () => {
     if (event.mealId) {
@@ -62,31 +64,44 @@ export function EventCard({ event, activeTab, onJoinEvent }: EventCardProps) {
             </div>
           )}
 
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Clock className="h-4 w-4 mr-2" />
-          {formatDate(event.eventDate)}
-        </div>
-        <div className="flex items-center text-sm text-muted-foreground">
-          <MapPin className="h-4 w-4 mr-2" />
-          {event.location}
-        </div>
+          {/* Clickable Meal Name */}
+          {event.hostUserId && (
+            <div className="flex items-center text-sm mb-2">
+              <User className="h-4 w-4 mr-2 text-muted-foreground" />
+              <button
+                onClick={() => navigate(`/profile/${event.hostUserId}`)}
+                className="text-primary hover:text-primary/80 underline underline-offset-2 cursor-pointer transition-colors"
+              >
+                See host profile
+              </button>
+            </div>
+          )}
 
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Users className="h-4 w-4 mr-2" />
-          {event.currentParticipants}/{event.maxParticipants} participants
-        </div>
-        {activeTab === "all" && onJoinEvent && (
-          <Button
-            className="mx-4 mt-8"
-            onClick={() => onJoinEvent(event.id)}
-            disabled={event.currentParticipants >= event.maxParticipants}
-          >
-            {event.currentParticipants >= event.maxParticipants ? "Event Full" : "Join Event"}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Clock className="h-4 w-4 mr-2" />
+            {formatDate(event.eventDate)}
+          </div>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-2" />
+            {event.location}
+          </div>
+
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Users className="h-4 w-4 mr-2" />
+            {event.currentParticipants}/{event.maxParticipants} participants
+          </div>
+          {activeTab === "all" && onJoinEvent && (
+            <Button
+              className="mx-4 mt-8"
+              onClick={() => onJoinEvent(event.id)}
+              disabled={event.currentParticipants >= event.maxParticipants}
+            >
+              {event.currentParticipants >= event.maxParticipants ? "Event Full" : "Join Event"}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
       <MealDialog
         isOpen={isOpen}
