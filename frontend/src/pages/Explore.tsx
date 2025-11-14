@@ -58,7 +58,7 @@ export default function Explore() {
         {/* Page Header */}
         <div className="mb-8 flex items-start justify-between">
           <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">Explore Meals</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">Explore events</h1>
             <p className="text-lg text-muted-foreground">
               Discover amazing cultural dining experiences near your campus
             </p>
@@ -68,9 +68,9 @@ export default function Explore() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 mx-auto lg:mx-16 mb-8">
-            <TabsTrigger value="all">All Meals</TabsTrigger>
-            <TabsTrigger value="my">My Meals</TabsTrigger>
-            <TabsTrigger value="joined">Joined Meals</TabsTrigger>
+            <TabsTrigger value="all">Live Events</TabsTrigger>
+            <TabsTrigger value="my">My Events</TabsTrigger>
+            <TabsTrigger value="joined">Joined Events</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all">

@@ -31,6 +31,7 @@ def event_model_to_schema(event_model: EventModel) -> Event:
     return Event(
         id=event_model.id,
         host_user_id=event_model.host_user_id,
+        meal_id=event_model.meal_id,
         title=event_model.title,
         description=event_model.description,
         max_participants=event_model.max_participants,

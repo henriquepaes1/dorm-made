@@ -58,84 +58,87 @@ export function useCreateMealForm() {
     });
   }, [formData]);
 
-  const submitMeal = useCallback(async (image: File | null = null) => {
-    const currentUser = localStorage.getItem("currentUser");
-    if (!currentUser) {
-      toast({
-        title: "Please Sign In",
-        description: "You need to sign in to create meals",
-        variant: "destructive",
-        duration: 1500,
-      });
-      return;
-    }
-
-    // Validate required fields
-    if (!validateMealDetails()) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-        duration: 1500,
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Check if user has a valid token
-      const token = getAuthToken();
-      if (!token) {
+  const submitMeal = useCallback(
+    async (image: File | null = null) => {
+      const currentUser = localStorage.getItem("currentUser");
+      if (!currentUser) {
         toast({
-          title: "Authentication Required",
-          description: "Please log in to create meals",
+          title: "Please Sign In",
+          description: "You need to sign in to create meals",
           variant: "destructive",
           duration: 1500,
         });
-        navigate("/login");
         return;
       }
 
-      // Create FormData to handle both text fields and image upload
-      const formDataToSend = new FormData();
-      formDataToSend.append("name", formData.name);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("ingredients", formData.ingredients);
-
-      // Add image if provided
-      if (image) {
-        formDataToSend.append("image", image);
+      // Validate required fields
+      if (!validateMealDetails()) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+          duration: 1500,
+        });
+        return;
       }
 
-      await createMeal(formDataToSend);
+      setLoading(true);
 
-      toast({
-        title: "Success!",
-        description: "Meal created successfully!",
-        className: "bg-green-500 text-white border-green-600",
-        duration: 1500,
-      });
+      try {
+        // Check if user has a valid token
+        const token = getAuthToken();
+        if (!token) {
+          toast({
+            title: "Authentication Required",
+            description: "Please log in to create meals",
+            variant: "destructive",
+            duration: 1500,
+          });
+          navigate("/login");
+          return;
+        }
 
-      navigate("/explore");
-    } catch (error) {
-      if (isAxiosError(error)) {
-        console.error("CreateMeal error:", error);
-        console.error("Error response:", error.response);
-        console.error("Error status:", error.response?.status);
-        console.error("Error data:", error.response?.data);
+        // Create FormData to handle both text fields and image upload
+        const formDataToSend = new FormData();
+        formDataToSend.append("name", formData.name);
+        formDataToSend.append("description", formData.description);
+        formDataToSend.append("ingredients", formData.ingredients);
+
+        // Add image if provided
+        if (image) {
+          formDataToSend.append("image", image);
+        }
+
+        await createMeal(formDataToSend);
+
+        toast({
+          title: "Success!",
+          description: "Meal created successfully!",
+          className: "bg-green-500 text-white border-green-600",
+          duration: 1500,
+        });
+
+        navigate("/create-event");
+      } catch (error) {
+        if (isAxiosError(error)) {
+          console.error("CreateMeal error:", error);
+          console.error("Error response:", error.response);
+          console.error("Error status:", error.response?.status);
+          console.error("Error data:", error.response?.data);
+        }
+
+        toast({
+          title: "Error",
+          description: error.response?.data?.detail || "Failed to create meal",
+          variant: "destructive",
+          duration: 1500,
+        });
+      } finally {
+        setLoading(false);
       }
-
-      toast({
-        title: "Error",
-        description: error.response?.data?.detail || "Failed to create meal",
-        variant: "destructive",
-        duration: 1500,
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [formData, toast, navigate, validateMealDetails]);
+    },
+    [formData, toast, navigate, validateMealDetails],
+  );
 
   return {
     loading,

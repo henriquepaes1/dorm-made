@@ -1,13 +1,13 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
-from typing import Union, Optional
+from typing import Optional
 
 class EventBase(BaseModel):
+    meal_id: str
     title: str
     description: str
     max_participants: int
     location: str
-    image_url: Optional[str] = None
     price: Optional[float] = None
 
 class EventCreate(EventBase):
@@ -19,5 +19,6 @@ class Event(EventBase):
     current_participants: int
     event_date: datetime  # Store as datetime
     created_at: datetime
+    image_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -9,6 +9,7 @@ class EventModel(Base):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     host_user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    meal_id = Column(String, ForeignKey("meals.id"), nullable=False, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     max_participants = Column(Integer, nullable=False)

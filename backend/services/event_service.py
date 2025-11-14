@@ -98,6 +98,7 @@ async def create_event(event: EventCreate, host_user_id: str, db: Session, image
         event_model = EventModel(
             id=str(uuid.uuid4()),
             host_user_id=str(host_user_id),
+            meal_id=event.meal_id,
             title=event.title,
             description=event.description,
             max_participants=event.max_participants,

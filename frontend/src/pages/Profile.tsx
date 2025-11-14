@@ -21,7 +21,6 @@ import {
   Upload,
   Image as ImageIcon,
 } from "lucide-react";
-import { User } from "@/types";
 
 export default function Profile() {
   const { userId } = useParams<{ userId: string }>();
@@ -313,7 +312,7 @@ export default function Profile() {
                     <UtensilsCrossed className="h-5 w-5 text-primary" />
                   </div>
                   <h2 className="text-xl lg:text-2xl font-bold">
-                    {isOwnProfile() ? "My Meals" : "Meals"}
+                    {isOwnProfile() ? "My Events" : "Events"}
                   </h2>
                 </div>
                 <p className="text-sm text-muted-foreground">Events created by me</p>
@@ -344,11 +343,7 @@ export default function Profile() {
               ) : (
                 <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
                   {userEvents.map((event) => (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      activeTab="profile"
-                    />
+                    <EventCard key={event.id} event={event} activeTab="profile" />
                   ))}
                 </div>
               )}

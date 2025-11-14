@@ -63,12 +63,12 @@ export default function EventDetailsForm({
 
           {/* Max Participants and Event Date */}
           <div>
-            <Label htmlFor="max_participants">Max Participants</Label>
+            <Label htmlFor="maxParticipants">Max Participants</Label>
             <Input
-              id="max_participants"
-              name="max_participants"
+              id="maxParticipants"
+              name="maxParticipants"
               type="number"
-              value={formData.max_participants}
+              value={formData.maxParticipants}
               onChange={handleInputChange}
               placeholder="6"
               min="1"
@@ -78,12 +78,12 @@ export default function EventDetailsForm({
           </div>
 
           <div>
-            <Label htmlFor="event_date">Event Date & Time</Label>
+            <Label htmlFor="eventDate">Event Date & Time</Label>
             <Input
-              id="event_date"
-              name="event_date"
+              id="eventDate"
+              name="eventDate"
               type="datetime-local"
-              value={formData.event_date}
+              value={formData.eventDate}
               onChange={handleInputChange}
               required
             />

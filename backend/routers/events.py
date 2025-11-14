@@ -21,6 +21,7 @@ async def create_event_endpoint(
     max_participants: Annotated[int, Form()],
     location: Annotated[str, Form()],
     event_date: Annotated[str, Form()],
+    meal_id: Annotated[str, Form()],
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Session = Depends(get_db),
     price: Annotated[Optional[str], Form()] = None,
@@ -37,6 +38,7 @@ async def create_event_endpoint(
 
     # Construct EventCreate object from form data
     event_data = EventCreate(
+        meal_id=meal_id,
         title=title,
         description=description,
         max_participants=max_participants,
