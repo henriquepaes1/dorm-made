@@ -1,29 +1,42 @@
 import { useState, useCallback, useEffect } from "react";
 import { Meal } from "@/types";
-import { mockMeals } from "@/data/mockMeals";
+import { getMyMeals } from "@/services";
+import { useToast } from "@/hooks/use-toast";
+import { isAxiosError } from "axios";
 
 /**
  * Custom hook for managing user's meals/recipes
- * Currently uses mock data, but can be easily extended to fetch from API
+ * Fetches meals from the API
  */
 export function useMeals() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
+  const { toast } = useToast();
 
-  // Simulate API fetch with mock data
   const fetchMeals = useCallback(async () => {
     setLoading(true);
     try {
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      setMeals(mockMeals);
+      const data = await getMyMeals();
+      setMeals(data);
     } catch (error) {
       console.error("Error fetching meals:", error);
+
+      if (isAxiosError(error)) {
+        if (error.response?.status !== 401) {
+          toast({
+            title: "Error",
+            description: error.response?.data?.detail || "Failed to load meals",
+            variant: "destructive",
+            duration: 3000,
+          });
+        }
+      }
+      setMeals([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   // Load meals on mount
   useEffect(() => {
