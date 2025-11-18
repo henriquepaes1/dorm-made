@@ -31,7 +31,7 @@ export function HeroSection() {
           {/* Main Heading - Mobile Optimized */}
           <h1 className="text-4xl lg:text-6xl font-bold tracking-tight">
             <span className="bg-gradient-to-r from-primary to-red-200 text-transparent bg-clip-text">
-              Find student chefs
+              Share & Taste Culture
             </span>
           </h1>
 
