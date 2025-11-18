@@ -3,11 +3,9 @@ from typing import List, Annotated
 from sqlalchemy.orm import Session
 
 from schemas.user import User, UserCreate, UserLogin, UserUpdate, LoginResponse
-from schemas.event import Event
-from schemas.meal import Meal
 from utils.auth import get_current_user_id
 from utils.database import get_db
-from services import user_service, event_service, meal_service
+from services import user_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -20,30 +18,6 @@ async def create_user_endpoint(user: UserCreate, db: Session = Depends(get_db)):
 async def login_endpoint(login_data: UserLogin, db: Session = Depends(get_db)):
     """Authenticate user and return JWT token"""
     return await user_service.authenticate_user(login_data, db)
-
-@router.get("/me/events", response_model=List[Event], response_model_by_alias=True)
-async def get_my_events_endpoint(
-    current_user_id: Annotated[str, Depends(get_current_user_id)],
-    db: Session = Depends(get_db)
-):
-    """Get all events created by the authenticated user"""
-    return await event_service.get_user_events(current_user_id, db)
-
-@router.get("/me/joined-events", response_model=List[Event], response_model_by_alias=True)
-async def get_my_joined_events_endpoint(
-    current_user_id: Annotated[str, Depends(get_current_user_id)],
-    db: Session = Depends(get_db)
-):
-    """Get all events that the authenticated user has joined"""
-    return await event_service.get_user_joined_events(current_user_id, db)
-
-@router.get("/me/meals", response_model=List[Meal], response_model_by_alias=True)
-async def get_my_meals_endpoint(
-    current_user_id: Annotated[str, Depends(get_current_user_id)],
-    db: Session = Depends(get_db)
-):
-    """Get all meals created by the authenticated user"""
-    return await meal_service.get_user_meals(current_user_id, db)
 
 @router.get("/test")
 async def test_endpoint():
@@ -64,9 +38,6 @@ async def upload_profile_picture_endpoint(
     db: Session = Depends(get_db)
 ):
     """Upload a profile picture for the user (only the authenticated user can upload their own picture)"""
-    print(f"[DEBUG] Upload profile picture - user_id: {user_id}, current_user_id: {current_user_id}")
-    print(f"[DEBUG] File received: {image.filename}, Content-Type: {image.content_type}")
-
     if current_user_id != user_id:
         raise HTTPException(status_code=403, detail="Você só pode fazer upload da sua própria foto de perfil")
 
@@ -84,14 +55,6 @@ async def update_user_profile_endpoint(
         raise HTTPException(status_code=403, detail="You can only update your own profile")
 
     return await user_service.update_user(user_id, user_update, db)
-
-@router.get("/{user_id}/events", response_model=List[Event], response_model_by_alias=True)
-async def get_user_events_by_id_endpoint(user_id: str, db: Session = Depends(get_db)):
-    """Get all events created by a specific user (public endpoint)"""
-    try:
-        return await event_service.get_user_events(user_id, db)
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=f"Error fetching user events: {str(e)}")
 
 # Generic route last
 @router.get("/{user_id}", response_model=User)

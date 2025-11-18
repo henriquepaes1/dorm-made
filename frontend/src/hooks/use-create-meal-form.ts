@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createMeal, getAuthToken } from "@/services";
 import { useToast } from "@/hooks/use-toast";
-import { isAxiosError } from "axios";
+import { getErrorMessage } from "@/utils/error";
 import { Meal } from "@/types";
 
 export interface MealFormData {
@@ -120,16 +120,9 @@ export function useCreateMealForm() {
 
         navigate("/create-event");
       } catch (error) {
-        if (isAxiosError(error)) {
-          console.error("CreateMeal error:", error);
-          console.error("Error response:", error.response);
-          console.error("Error status:", error.response?.status);
-          console.error("Error data:", error.response?.data);
-        }
-
         toast({
           title: "Error",
-          description: error.response?.data?.detail || "Failed to create meal",
+          description: getErrorMessage(error, "Failed to create meal"),
           variant: "destructive",
           duration: 1500,
         });

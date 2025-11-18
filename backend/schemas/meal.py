@@ -15,6 +15,13 @@ class MealCreate(MealBase):
     pass
 
 
+class MealUpdate(BaseModel):
+    """Schema for updating a meal"""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    ingredients: Optional[str] = None
+
+
 class Meal(MealBase):
     """Schema for returning meal data"""
     id: str

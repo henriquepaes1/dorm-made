@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { isAxiosError } from "axios";
+import { getErrorMessage } from "@/utils/error";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/home/Footer";
 import { CreateEventProgressBar } from "@/components/layout/ProgressBar";
@@ -102,18 +102,11 @@ export default function CreateEvent() {
 
       navigate("/explore");
     } catch (error) {
-      if (isAxiosError(error)) {
-        console.error("CreateEvent error:", error);
-        console.error("Error response:", error.response);
-        console.error("Error status:", error.response?.status);
-        console.error("Error data:", error.response?.data);
-      }
-
       toast({
         title: "Error",
-        description: error.response?.data?.detail || "Failed to create event",
+        description: getErrorMessage(error, "Failed to create event"),
         variant: "destructive",
-        duration: 1500,
+        duration: 3000,
       });
     } finally {
       setLoading(false);

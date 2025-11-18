@@ -21,8 +21,8 @@ export function MealCard({ meal, isSelected = false, onTap }: MealCardProps) {
       onClick={() => onTap?.(meal)}
     >
       <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative overflow-hidden">
-        {meal.image_url ? (
-          <img src={meal.image_url} alt={meal.title} className="w-full h-full object-cover" />
+        {meal.imageUrl ? (
+          <img src={meal.imageUrl} alt={meal.title} className="w-full h-full object-cover" />
         ) : (
           <div className="text-center">
             <div className="text-4xl mb-2">🍽️</div>

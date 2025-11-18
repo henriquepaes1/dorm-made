@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getUser, updateUser, getUserEvents } from "@/services";
 import { User, Event } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { isAxiosError } from "axios";
+import { getErrorMessage } from "@/utils/error";
 
 interface UseProfileReturn {
   user: User | null;
@@ -39,11 +39,7 @@ export function useProfile(userId?: string): UseProfileReturn {
       const events = await getUserEvents(targetUserId);
       setUserEvents(events);
     } catch (error) {
-      if (isAxiosError(error)) {
-        console.error("Error response:", error.response);
-        console.error("Error status:", error.response?.status);
-        console.error("Error data:", error.response?.data);
-      }
+      console.error("Error loading user events:", getErrorMessage(error));
       setUserEvents([]);
     } finally {
       setLoadingEvents(false);
@@ -64,12 +60,6 @@ export function useProfile(userId?: string): UseProfileReturn {
         // Load events after user is loaded
         await loadUserEvents(userData.id);
       } catch (error) {
-        if (isAxiosError(error)) {
-          console.error("Error response:", error.response);
-          console.error("Error status:", error.response?.status);
-          console.error("Error data:", error.response?.data);
-        }
-
         // Fallback to localStorage if backend fails
         const currentUserStr = localStorage.getItem("currentUser");
         if (currentUserStr) {
@@ -87,14 +77,9 @@ export function useProfile(userId?: string): UseProfileReturn {
           }
         }
 
-        const errorMessage =
-          error.response?.data?.detail ||
-          error.message ||
-          "Não foi possível carregar o perfil do usuário";
-
         toast({
           title: "Erro",
-          description: errorMessage,
+          description: getErrorMessage(error, "Não foi possível carregar o perfil do usuário"),
           variant: "destructive",
           duration: 1500,
         });
@@ -131,14 +116,9 @@ export function useProfile(userId?: string): UseProfileReturn {
           duration: 1500,
         });
       } catch (error) {
-        if (isAxiosError(error)) {
-          console.error("Error response:", error.response);
-          console.error("Error status:", error.response?.status);
-          console.error("Error data:", error.response?.data);
-        }
         toast({
           title: "Erro",
-          description: error.response?.data?.detail || "Não foi possível atualizar o perfil",
+          description: getErrorMessage(error, "Não foi possível atualizar o perfil"),
           variant: "destructive",
           duration: 1500,
         });

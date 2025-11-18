@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Meal } from "@/types";
 import { getMyMeals } from "@/services";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/utils/error";
 import { isAxiosError } from "axios";
 
 /**
@@ -26,7 +27,7 @@ export function useMeals() {
         if (error.response?.status !== 401) {
           toast({
             title: "Error",
-            description: error.response?.data?.detail || "Failed to load meals",
+            description: getErrorMessage(error, "Failed to load meals"),
             variant: "destructive",
             duration: 3000,
           });

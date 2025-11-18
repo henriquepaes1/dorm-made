@@ -23,7 +23,15 @@ export interface EventCreate {
   price?: number;
 }
 
+export interface EventUpdate {
+  title?: string;
+  description?: string;
+  maxParticipants?: number;
+  location?: string;
+  eventDate?: string;
+  price?: number;
+}
+
 export interface JoinEventRequest {
-  userId: string;
-  eventId: string;
+  event_id: string;
 }

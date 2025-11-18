@@ -16,3 +16,9 @@ export interface MealCreate {
   instructions: string;
   prepTime: number;
 }
+
+export interface MealUpdate {
+  title?: string;
+  description?: string;
+  ingredients?: string;
+}

@@ -1,8 +1,5 @@
 import { httpClient, getAuthToken } from "./http-client";
 import { User, UserCreate, UserUpdate } from "@/types";
-import { Recipe } from "@/types";
-import { Event } from "@/types";
-import { Meal } from "@/types";
 
 /**
  * User Service
@@ -61,39 +58,5 @@ export const uploadProfilePicture = async (userId: string, file: File): Promise<
 
   const response = await httpClient.post(url, formData);
   console.log("[DEBUG] Upload successful:", response.data);
-  return response.data;
-};
-
-/**
- * Get all recipes created by a user
- */
-export const getUserRecipes = async (userId: string): Promise<Recipe[]> => {
-  const response = await httpClient.get(`/users/${userId}/recipes`);
-  return response.data;
-};
-
-/**
- * Get all events created by a user
- */
-export const getUserEvents = async (userId: string): Promise<Event[]> => {
-  const response = await httpClient.get(`/users/${userId}/events`);
-  return response.data;
-};
-
-/**
- * Get all meals created by a user
- */
-export const getUserMeals = async (userId: string): Promise<Meal[]> => {
-  const response = await httpClient.get(`/users/${userId}/meals`);
-  return response.data;
-};
-
-/**
- * Search users by query string
- */
-export const searchUsers = async (query: string, limit: number = 10): Promise<User[]> => {
-  const response = await httpClient.get("/users/search", {
-    params: { query, limit },
-  });
   return response.data;
 };

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { getEvents, getMyEvents, getJoinedEvents, joinEvent as joinEventApi } from "@/services";
 import { Event } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/utils/error";
 
 interface UseEventsReturn {
   allEvents: Event[];
@@ -95,7 +96,7 @@ export function useEvents(): UseEventsReturn {
 
       try {
         setLoading(true);
-        await joinEventApi({ eventId: eventId, userId: user.id });
+        await joinEventApi({ event_id: eventId });
 
         toast({
           title: "Success",
@@ -106,13 +107,11 @@ export function useEvents(): UseEventsReturn {
         // Refresh all event lists to reflect the change
         await refreshAllData();
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to join event";
-
         toast({
           title: "Error",
-          description: errorMessage,
+          description: getErrorMessage(err, "Failed to join event"),
           variant: "destructive",
-          duration: 1500,
+          duration: 3000,
         });
 
         console.error("Error joining event:", err);

@@ -3,7 +3,7 @@ from typing import List, Annotated, Optional
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from schemas.event import Event, EventCreate
+from schemas.event import Event, EventCreate, EventUpdate
 from schemas.event_participant import EventParticipant
 from utils.auth import get_current_user_id
 from utils.database import get_db
@@ -13,6 +13,22 @@ router = APIRouter(prefix="/events", tags=["events"])
 
 class JoinEventRequest(BaseModel):
     event_id: str
+
+@router.get("/me", response_model=List[Event], response_model_by_alias=True)
+async def get_my_events_endpoint(
+    current_user_id: Annotated[str, Depends(get_current_user_id)],
+    db: Session = Depends(get_db)
+):
+    """Get all events created by the authenticated user"""
+    return await event_service.get_user_events(current_user_id, db)
+
+@router.get("/me/joined", response_model=List[Event], response_model_by_alias=True)
+async def get_my_joined_events_endpoint(
+    current_user_id: Annotated[str, Depends(get_current_user_id)],
+    db: Session = Depends(get_db)
+):
+    """Get all events that the authenticated user has joined"""
+    return await event_service.get_user_joined_events(current_user_id, db)
 
 @router.post("/", response_model=Event, response_model_by_alias=True)
 async def create_event_endpoint(
@@ -64,8 +80,13 @@ async def join_event_endpoint(
     return await event_service.join_event(full_request, db)
 
 @router.get("/", response_model=List[Event], response_model_by_alias=True)
-async def list_events_endpoint(db: Session = Depends(get_db)):
-    """List all available events"""
+async def list_events_endpoint(
+    user_id: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """List all events, optionally filtered by user_id (for public profiles)"""
+    if user_id:
+        return await event_service.get_user_events(user_id, db)
     return await event_service.list_events(db)
 
 @router.get("/{event_id}", response_model=Event, response_model_by_alias=True)
@@ -77,3 +98,22 @@ async def get_event_details_endpoint(event_id: str, db: Session = Depends(get_db
 async def get_event_participants_endpoint(event_id: str, db: Session = Depends(get_db)):
     """Get all participants for a specific event"""
     return await event_service.get_event_participants(event_id, db)
+
+@router.put("/{event_id}", response_model=Event, response_model_by_alias=True)
+async def update_event_endpoint(
+    event_id: str,
+    event_update: EventUpdate,
+    current_user_id: Annotated[str, Depends(get_current_user_id)],
+    db: Session = Depends(get_db)
+):
+    """Update an existing event (only the host can update)"""
+    return await event_service.update_event(event_id, event_update, current_user_id, db)
+
+@router.delete("/{event_id}")
+async def delete_event_endpoint(
+    event_id: str,
+    current_user_id: Annotated[str, Depends(get_current_user_id)],
+    db: Session = Depends(get_db)
+):
+    """Soft delete an event (only the host can delete)"""
+    return await event_service.soft_delete_event(event_id, current_user_id, db)

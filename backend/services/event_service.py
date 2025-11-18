@@ -6,11 +6,10 @@ import uuid
 
 from models.event import EventModel
 from models.event_participant import EventParticipantModel
-from schemas.event import Event, EventCreate
+from schemas.event import Event, EventCreate, EventUpdate
 from schemas.event_participant import EventParticipant
 from utils.converters import (
     event_model_to_schema,
-    event_models_to_schemas,
     event_participant_models_to_schemas
 )
 from utils.supabase import supabase
@@ -21,7 +20,10 @@ from .meal_service import get_meal_name
 def get_event(event_id: str, db: Session) -> Optional[Event]:
     """Get event by ID from database"""
     try:
-        event_model = db.query(EventModel).filter(EventModel.id == event_id).first()
+        event_model = db.query(EventModel).filter(
+            EventModel.id == event_id,
+            EventModel.is_deleted == False
+        ).first()
         if event_model:
             meal_name = get_meal_name(event_model.meal_id, db)
             return event_model_to_schema(event_model, meal_name)
@@ -108,7 +110,8 @@ async def create_event(event: EventCreate, host_user_id: str, db: Session, image
             location=event.location,
             event_date=event_date,
             image_url=image_url,
-            price=event.price
+            price=event.price,
+            is_deleted=False,
         )
 
         db.add(event_model)
@@ -178,9 +181,9 @@ async def join_event(join_request: Dict[str, Any], db: Session) -> Dict[str, str
 
 
 async def list_events(db: Session) -> List[Event]:
-    """List all available events"""
+    """List all available events (excluding deleted ones)"""
     try:
-        event_models = db.query(EventModel).all()
+        event_models = db.query(EventModel).filter(EventModel.is_deleted == False).all()
         # Convert each event with its meal name
         events = []
         for event_model in event_models:
@@ -211,10 +214,11 @@ async def get_event_participants(event_id: str, db: Session) -> List[EventPartic
 
 
 async def get_user_events(user_id: str, db: Session) -> List[Event]:
-    """Get all events created by a specific user"""
+    """Get all events created by a specific user (excluding deleted ones)"""
     try:
         event_models = db.query(EventModel).filter(
-            EventModel.host_user_id == user_id
+            EventModel.host_user_id == user_id,
+            EventModel.is_deleted == False
         ).all()
         # Convert each event with its meal name
         events = []
@@ -227,7 +231,7 @@ async def get_user_events(user_id: str, db: Session) -> List[Event]:
 
 
 async def get_user_joined_events(user_id: str, db: Session) -> List[Event]:
-    """Get all events that a user has joined"""
+    """Get all events that a user has joined (excluding deleted ones)"""
     try:
         # First get all event IDs that the user has joined
         participant_models = db.query(EventParticipantModel).filter(
@@ -239,8 +243,11 @@ async def get_user_joined_events(user_id: str, db: Session) -> List[Event]:
 
         event_ids = [participant.event_id for participant in participant_models]
 
-        # Then get the full event details for those events
-        event_models = db.query(EventModel).filter(EventModel.id.in_(event_ids)).all()
+        # Then get the full event details for those events (excluding deleted ones)
+        event_models = db.query(EventModel).filter(
+            EventModel.id.in_(event_ids),
+            EventModel.is_deleted == False
+        ).all()
         # Convert each event with its meal name
         events = []
         for event_model in event_models:
@@ -249,3 +256,79 @@ async def get_user_joined_events(user_id: str, db: Session) -> List[Event]:
         return events
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching joined events: {str(e)}")
+
+
+async def update_event(event_id: str, event_update: EventUpdate, user_id: str, db: Session) -> Event:
+    """Update an existing event (only the host can update)"""
+    # Get the event
+    event_model = db.query(EventModel).filter(EventModel.id == event_id).first()
+    if not event_model:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Verify that the user is the host
+    if event_model.host_user_id != user_id:
+        raise HTTPException(status_code=403, detail="Only the event host can update the event")
+
+    try:
+        # Update only the fields that are provided
+        if event_update.title is not None:
+            event_model.title = event_update.title
+
+        if event_update.description is not None:
+            event_model.description = event_update.description
+
+        if event_update.max_participants is not None:
+            # Validate that new max_participants is not less than current_participants
+            if event_update.max_participants < event_model.current_participants:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot reduce max participants to {event_update.max_participants} when there are already {event_model.current_participants} participants"
+                )
+            event_model.max_participants = event_update.max_participants
+
+        if event_update.location is not None:
+            event_model.location = event_update.location
+
+        if event_update.event_date is not None:
+            # Convert string to datetime
+            event_date = datetime.fromisoformat(event_update.event_date.replace('Z', '+00:00'))
+            event_model.event_date = event_date
+
+        if event_update.price is not None:
+            event_model.price = event_update.price
+
+        db.commit()
+        db.refresh(event_model)
+
+        meal_name = get_meal_name(event_model.meal_id, db)
+        return event_model_to_schema(event_model, meal_name)
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Error updating event: {str(e)}")
+
+
+async def soft_delete_event(event_id: str, user_id: str, db: Session) -> Dict[str, str]:
+    """Soft delete an event (only the host can delete)"""
+    # Get the event (including deleted ones for this operation)
+    event_model = db.query(EventModel).filter(EventModel.id == event_id).first()
+    if not event_model:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Check if already deleted
+    if event_model.is_deleted:
+        raise HTTPException(status_code=400, detail="Event is already deleted")
+
+    # Verify that the user is the host
+    if event_model.host_user_id != user_id:
+        raise HTTPException(status_code=403, detail="Only the event host can delete the event")
+
+    try:
+        # Soft delete: set is_deleted to True
+        event_model.is_deleted = True
+        db.commit()
+        return {"message": "Event successfully deleted", "event_id": event_id}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Error deleting event: {str(e)}")

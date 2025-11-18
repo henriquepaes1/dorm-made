@@ -1,5 +1,6 @@
 import { createUser } from "@/services/user.service";
 import { useState } from "react";
+import { getErrorMessage } from "@/utils/error";
 
 function UserRegistration({ onUserRegistered }) {
   const [formData, setFormData] = useState({
@@ -38,7 +39,7 @@ function UserRegistration({ onUserRegistered }) {
         password: "",
       });
     } catch (err) {
-      setError(err.response?.data?.detail || "Failed to create user");
+      setError(getErrorMessage(err, "Failed to create user"));
     } finally {
       setLoading(false);
     }
