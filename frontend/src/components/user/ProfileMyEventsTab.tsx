@@ -14,7 +14,7 @@ export function ProfileMyEventsTab({
   isOwnProfile,
   userName,
 }: ProfileMyEventsTabProps) {
-  const { userEvents, loadingEvents } = useProfile(userId);
+  const { userEvents, loadingEvents, refreshUserEvents } = useProfile(userId);
 
   if (loadingEvents) {
     return (
@@ -49,7 +49,12 @@ export function ProfileMyEventsTab({
   return (
     <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
       {userEvents.map((event) => (
-        <EventCard key={event.id} event={event} activeTab="profile" />
+        <EventCard
+          key={event.id}
+          event={event}
+          activeTab="profile"
+          onEventUpdated={refreshUserEvents}
+        />
       ))}
     </div>
   );

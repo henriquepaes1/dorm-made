@@ -18,6 +18,7 @@ interface UseProfileReturn {
   handleCancel: () => void;
   loadUser: (userId: string) => Promise<void>;
   isOwnProfile: () => boolean;
+  refreshUserEvents: () => Promise<void>;
 }
 
 /**
@@ -174,6 +175,12 @@ export function useProfile(userId?: string): UseProfileReturn {
     }
   }, [userId, loadUser, loadUserEvents]);
 
+  const refreshUserEvents = useCallback(async () => {
+    if (user?.id) {
+      await loadUserEvents(user.id);
+    }
+  }, [user?.id, loadUserEvents]);
+
   return {
     user,
     loading,
@@ -188,5 +195,6 @@ export function useProfile(userId?: string): UseProfileReturn {
     handleCancel,
     loadUser,
     isOwnProfile,
+    refreshUserEvents,
   };
 }

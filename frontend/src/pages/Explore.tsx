@@ -87,6 +87,7 @@ export default function Explore() {
                     event={event}
                     activeTab={activeTab}
                     onJoinEvent={handleJoinEvent}
+                    onEventUpdated={refreshAllData}
                   />
                 ))
               )}
@@ -109,6 +110,7 @@ export default function Explore() {
                     event={event}
                     activeTab={activeTab}
                     onJoinEvent={handleJoinEvent}
+                    onEventUpdated={refreshAllData}
                   />
                 ))
               )}
@@ -129,6 +131,7 @@ export default function Explore() {
                     event={event}
                     activeTab={activeTab}
                     onJoinEvent={handleJoinEvent}
+                    onEventUpdated={refreshAllData}
                   />
                 ))
               )}

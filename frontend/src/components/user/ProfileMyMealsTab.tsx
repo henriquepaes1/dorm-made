@@ -15,20 +15,20 @@ export function ProfileMyMealsTab({ userId, isOwnProfile, userName }: ProfileMyM
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUserMeals = async () => {
-      setLoading(true);
-      try {
-        const data = await getUserMeals(userId);
-        setMeals(data);
-      } catch (error) {
-        console.error("Error fetching user meals:", error);
-        setMeals([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchUserMeals = async () => {
+    setLoading(true);
+    try {
+      const data = await getUserMeals(userId);
+      setMeals(data);
+    } catch (error) {
+      console.error("Error fetching user meals:", error);
+      setMeals([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchUserMeals();
   }, [userId]);
 
@@ -65,7 +65,12 @@ export function ProfileMyMealsTab({ userId, isOwnProfile, userName }: ProfileMyM
   return (
     <div className="flex overflow-x-auto gap-4 pb-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible">
       {meals.map((meal) => (
-        <MealCard key={meal.id} meal={meal} expandOnTap={true} />
+        <MealCard
+          key={meal.id}
+          meal={meal}
+          expandOnTap={true}
+          onMealUpdated={fetchUserMeals}
+        />
       ))}
     </div>
   );

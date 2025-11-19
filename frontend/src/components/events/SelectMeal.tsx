@@ -55,6 +55,7 @@ export default function SelectMeal({
               meal={meal}
               isSelected={selectedMeal?.id === meal.id}
               onTap={onSelectMeal}
+              showActions={false}
             />
           ))}
         </div>
