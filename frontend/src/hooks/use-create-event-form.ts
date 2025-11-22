@@ -1,0 +1,46 @@
+import { useState, useCallback } from "react";
+
+export interface EventFormData {
+  title: string;
+  description: string;
+  maxParticipants: string;
+  eventDate: string;
+  location: string;
+  price: string;
+}
+
+export function useCreateEventForm() {
+  // Form state
+  const [formData, setFormData] = useState<EventFormData>({
+    title: "",
+    description: "",
+    maxParticipants: "",
+    eventDate: "",
+    location: "",
+    price: "",
+  });
+
+  const updateFormData = useCallback((updates: Partial<EventFormData>) => {
+    setFormData((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const validateEventDetails = useCallback(() => {
+    const requiredFields: (keyof EventFormData)[] = [
+      "title",
+      "description",
+      "maxParticipants",
+      "eventDate",
+      "location",
+    ];
+    return requiredFields.every((field) => {
+      const value = formData[field];
+      return value && value.trim() !== "";
+    });
+  }, [formData]);
+
+  return {
+    formData,
+    updateFormData,
+    validateEventDetails,
+  };
+}

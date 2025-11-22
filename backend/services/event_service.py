@@ -1,31 +1,50 @@
 from fastapi import HTTPException, UploadFile
-from typing import List, Optional
-from .user_service import get_user
-from database import supabase
-from schemas.event import Event, EventCreate
-from schemas.event_participant import EventParticipant, EventParticipantCreate
-import uuid
+from typing import List, Optional, Dict, Any
+from sqlalchemy.orm import Session
 from datetime import datetime
+import uuid
 
-def get_event(event_id: str) -> Optional[Event]:
-    """Get event by ID from Supabase"""
+from models.event import EventModel
+from models.event_participant import EventParticipantModel
+from schemas.event import Event, EventCreate, EventUpdate
+from schemas.event_participant import EventParticipant
+from utils.converters import (
+    event_model_to_schema,
+    event_participant_models_to_schemas
+)
+from utils.supabase import supabase
+from .user_service import get_user
+from .meal_service import get_meal_name
+
+
+def get_event(event_id: str, db: Session) -> Optional[Event]:
+    """Get event by ID from database"""
     try:
-        result = supabase.table("events").select("*").eq("id", event_id).execute()
-        if result.data:
-            return Event(**result.data[0])
+        event_model = db.query(EventModel).filter(
+            EventModel.id == event_id,
+            EventModel.is_deleted == False
+        ).first()
+        if event_model:
+            meal_name = get_meal_name(event_model.meal_id, db)
+            return event_model_to_schema(event_model, meal_name)
         return None
     except Exception as e:
         print(f"Error getting event: {e}")
         return None
 
-def is_user_participating(event_id: str, user_id: str) -> bool:
+
+def is_user_participating(event_id: str, user_id: str, db: Session) -> bool:
     """Check if user is already participating in an event"""
     try:
-        result = supabase.table("events_participants").select("*").eq("event_id", event_id).eq("participant_id", user_id).execute()
-        return len(result.data) > 0
+        participant = db.query(EventParticipantModel).filter(
+            EventParticipantModel.event_id == event_id,
+            EventParticipantModel.participant_id == user_id
+        ).first()
+        return participant is not None
     except Exception as e:
         print(f"Error checking participation: {e}")
         return False
+
 
 async def upload_event_image(image: UploadFile) -> str:
     """Upload an event image to Supabase Storage and return the public URL"""
@@ -60,10 +79,11 @@ async def upload_event_image(image: UploadFile) -> str:
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error uploading image: {str(e)}")
 
-async def create_event(event: EventCreate, host_user_id: str, image: Optional[UploadFile] = None) -> Event:
+
+async def create_event(event: EventCreate, host_user_id: str, db: Session, image: Optional[UploadFile] = None) -> Event:
     """Create a new culinary event with optional image upload"""
     # Verify host user exists
-    host = await get_user(host_user_id)
+    host = await get_user(host_user_id, db)
     if not host:
         raise HTTPException(status_code=404, detail="Host user not found")
 
@@ -73,33 +93,52 @@ async def create_event(event: EventCreate, host_user_id: str, image: Optional[Up
         if image and image.filename:
             image_url = await upload_event_image(image)
 
-        # Convert string event_date to datetime
-        event_date = datetime.fromisoformat(event.event_date.replace('Z', '+00:00'))
+        # Convert string event_date to datetime if needed
+        event_date = event.event_date
+        if isinstance(event_date, str):
+            event_date = datetime.fromisoformat(event.event_date.replace('Z', '+00:00'))
 
-        event_data = event.model_dump()
-        event_data["host_user_id"] = str(host_user_id)  # Add the authenticated user as host
-        event_data["current_participants"] = 0  # Initialize with 0 participants
-        event_data["image_url"] = image_url  # Add image URL if available
+        # Create new event model
+        event_model = EventModel(
+            id=str(uuid.uuid4()),
+            host_user_id=str(host_user_id),
+            meal_id=event.meal_id,
+            title=event.title,
+            description=event.description,
+            max_participants=event.max_participants,
+            current_participants=0,
+            location=event.location,
+            event_date=event_date,
+            image_url=image_url,
+            price=event.price,
+            is_deleted=False,
+        )
 
-        result = supabase.table("events").insert(event_data).execute()
-        if result.data:
-            return Event(**result.data[0])
-        raise HTTPException(status_code=400, detail="Failed to create event")
+        db.add(event_model)
+        db.commit()
+        db.refresh(event_model)
+
+        meal_name = get_meal_name(event_model.meal_id, db)
+        return event_model_to_schema(event_model, meal_name)
+    except HTTPException:
+        raise
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=400, detail=f"Error creating event: {str(e)}")
 
-async def join_event(join_request) -> dict:
+
+async def join_event(join_request: Dict[str, Any], db: Session) -> Dict[str, str]:
     """Join an existing event"""
     user_id = join_request["user_id"] if isinstance(join_request, dict) else join_request.user_id
     event_id = join_request["event_id"] if isinstance(join_request, dict) else join_request.event_id
 
     # Verify user exists
-    user = await get_user(user_id)
+    user = await get_user(user_id, db)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     # Verify event exists
-    event = get_event(event_id)
+    event = get_event(event_id, db)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
@@ -108,7 +147,7 @@ async def join_event(join_request) -> dict:
         raise HTTPException(status_code=400, detail="Host cannot join their own event")
 
     # Check if user is already participating
-    if is_user_participating(event_id, user_id):
+    if is_user_participating(event_id, user_id, db):
         raise HTTPException(status_code=400, detail="User is already participating in this event")
 
     # Check if event is full
@@ -117,75 +156,179 @@ async def join_event(join_request) -> dict:
 
     try:
         # Add participant to events_participants table
-        participant_data = {
-            "event_id": event_id,
-            "participant_id": user_id
-        }
-        
-        participant_result = supabase.table("events_participants").insert(participant_data).execute()
-        
-        if not participant_result.data:
-            raise HTTPException(status_code=400, detail="Failed to add participant")
+        participant_model = EventParticipantModel(
+            id=str(uuid.uuid4()),
+            event_id=event_id,
+            participant_id=user_id
+        )
+
+        db.add(participant_model)
 
         # Update event participants count
-        result = supabase.table("events").update({
-            "current_participants": event.current_participants + 1
-        }).eq("id", event_id).execute()
-
-        if result.data:
+        event_model = db.query(EventModel).filter(EventModel.id == event_id).first()
+        if event_model:
+            event_model.current_participants += 1
+            db.commit()
             return {"message": "Successfully joined the event", "event_id": event_id}
-        raise HTTPException(status_code=400, detail="Failed to update participant count")
+        else:
+            db.rollback()
+            raise HTTPException(status_code=400, detail="Failed to update participant count")
+    except HTTPException:
+        raise
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=400, detail=f"Error joining event: {str(e)}")
 
-async def list_events() -> List[Event]:
-    """List all available events"""
+
+async def list_events(db: Session) -> List[Event]:
+    """List all available events (excluding deleted ones)"""
     try:
-        result = supabase.table("events").select("*").execute()
-        events = [Event(**event) for event in result.data]
+        event_models = db.query(EventModel).filter(EventModel.is_deleted == False).all()
+        # Convert each event with its meal name
+        events = []
+        for event_model in event_models:
+            meal_name = get_meal_name(event_model.meal_id, db)
+            events.append(event_model_to_schema(event_model, meal_name))
         return events
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching events: {str(e)}")
 
-async def get_event_details(event_id: str) -> Event:
+
+async def get_event_details(event_id: str, db: Session) -> Event:
     """Get details of a specific event"""
-    event = get_event(event_id)
+    event = get_event(event_id, db)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     return event
 
-async def get_event_participants(event_id: str) -> List[EventParticipant]:
+
+async def get_event_participants(event_id: str, db: Session) -> List[EventParticipant]:
     """Get all participants for an event"""
     try:
-        result = supabase.table("events_participants").select("*").eq("event_id", event_id).execute()
-        participants = [EventParticipant(**participant) for participant in result.data]
-        return participants
+        participant_models = db.query(EventParticipantModel).filter(
+            EventParticipantModel.event_id == event_id
+        ).all()
+        return event_participant_models_to_schemas(participant_models)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching participants: {str(e)}")
 
-async def get_user_events(user_id: str) -> List[Event]:
-    """Get all events created by a specific user"""
+
+async def get_user_events(user_id: str, db: Session) -> List[Event]:
+    """Get all events created by a specific user (excluding deleted ones)"""
     try:
-        result = supabase.table("events").select("*").eq("host_user_id", user_id).execute()
-        events = [Event(**event) for event in result.data]
+        event_models = db.query(EventModel).filter(
+            EventModel.host_user_id == user_id,
+            EventModel.is_deleted == False
+        ).all()
+        # Convert each event with its meal name
+        events = []
+        for event_model in event_models:
+            meal_name = get_meal_name(event_model.meal_id, db)
+            events.append(event_model_to_schema(event_model, meal_name))
         return events
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching user events: {str(e)}")
 
-async def get_user_joined_events(user_id: str) -> List[Event]:
-    """Get all events that a user has joined"""
+
+async def get_user_joined_events(user_id: str, db: Session) -> List[Event]:
+    """Get all events that a user has joined (excluding deleted ones)"""
     try:
         # First get all event IDs that the user has joined
-        participants_result = supabase.table("events_participants").select("event_id").eq("participant_id", user_id).execute()
-        
-        if not participants_result.data:
+        participant_models = db.query(EventParticipantModel).filter(
+            EventParticipantModel.participant_id == user_id
+        ).all()
+
+        if not participant_models:
             return []
-        
-        event_ids = [participant["event_id"] for participant in participants_result.data]
-        
-        # Then get the full event details for those events
-        events_result = supabase.table("events").select("*").in_("id", event_ids).execute()
-        events = [Event(**event) for event in events_result.data]
+
+        event_ids = [participant.event_id for participant in participant_models]
+
+        # Then get the full event details for those events (excluding deleted ones)
+        event_models = db.query(EventModel).filter(
+            EventModel.id.in_(event_ids),
+            EventModel.is_deleted == False
+        ).all()
+        # Convert each event with its meal name
+        events = []
+        for event_model in event_models:
+            meal_name = get_meal_name(event_model.meal_id, db)
+            events.append(event_model_to_schema(event_model, meal_name))
         return events
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error fetching joined events: {str(e)}")
+
+
+async def update_event(event_id: str, event_update: EventUpdate, user_id: str, db: Session) -> Event:
+    """Update an existing event (only the host can update)"""
+    # Get the event
+    event_model = db.query(EventModel).filter(EventModel.id == event_id).first()
+    if not event_model:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Verify that the user is the host
+    if event_model.host_user_id != user_id:
+        raise HTTPException(status_code=403, detail="Only the event host can update the event")
+
+    try:
+        # Update only the fields that are provided
+        if event_update.title is not None:
+            event_model.title = event_update.title
+
+        if event_update.description is not None:
+            event_model.description = event_update.description
+
+        if event_update.max_participants is not None:
+            # Validate that new max_participants is not less than current_participants
+            if event_update.max_participants < event_model.current_participants:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot reduce max participants to {event_update.max_participants} when there are already {event_model.current_participants} participants"
+                )
+            event_model.max_participants = event_update.max_participants
+
+        if event_update.location is not None:
+            event_model.location = event_update.location
+
+        if event_update.event_date is not None:
+            # Convert string to datetime
+            event_date = datetime.fromisoformat(event_update.event_date.replace('Z', '+00:00'))
+            event_model.event_date = event_date
+
+        if event_update.price is not None:
+            event_model.price = event_update.price
+
+        db.commit()
+        db.refresh(event_model)
+
+        meal_name = get_meal_name(event_model.meal_id, db)
+        return event_model_to_schema(event_model, meal_name)
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Error updating event: {str(e)}")
+
+
+async def soft_delete_event(event_id: str, user_id: str, db: Session) -> Dict[str, str]:
+    """Soft delete an event (only the host can delete)"""
+    # Get the event (including deleted ones for this operation)
+    event_model = db.query(EventModel).filter(EventModel.id == event_id).first()
+    if not event_model:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Check if already deleted
+    if event_model.is_deleted:
+        raise HTTPException(status_code=400, detail="Event is already deleted")
+
+    # Verify that the user is the host
+    if event_model.host_user_id != user_id:
+        raise HTTPException(status_code=403, detail="Only the event host can delete the event")
+
+    try:
+        # Soft delete: set is_deleted to True
+        event_model.is_deleted = True
+        db.commit()
+        return {"message": "Event successfully deleted", "event_id": event_id}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Error deleting event: {str(e)}")

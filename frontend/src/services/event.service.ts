@@ -1,5 +1,5 @@
 import { httpClient } from "./http-client";
-import { Event, EventCreate, JoinEventRequest } from "@/types";
+import { Event, EventCreate, EventUpdate, JoinEventRequest } from "@/types";
 
 /**
  * Event Service
@@ -46,7 +46,7 @@ export const joinEvent = async (
  * Get events created by the current user
  */
 export const getMyEvents = async (): Promise<Event[]> => {
-  const response = await httpClient.get("/users/me/events");
+  const response = await httpClient.get("/events/me");
   return response.data;
 };
 
@@ -54,6 +54,39 @@ export const getMyEvents = async (): Promise<Event[]> => {
  * Get events that the current user has joined
  */
 export const getJoinedEvents = async (): Promise<Event[]> => {
-  const response = await httpClient.get("/users/me/joined-events");
+  const response = await httpClient.get("/events/me/joined");
+  return response.data;
+};
+
+/**
+ * Get events created by a specific user (for public profiles)
+ */
+export const getUserEvents = async (userId: string): Promise<Event[]> => {
+  const response = await httpClient.get("/events/", {
+    params: { user_id: userId }
+  });
+  return response.data;
+};
+
+/**
+ * Update an event
+ * Only the event host can update
+ */
+export const updateEvent = async (
+  eventId: string,
+  eventData: EventUpdate,
+): Promise<Event> => {
+  const response = await httpClient.put(`/events/${eventId}`, eventData);
+  return response.data;
+};
+
+/**
+ * Delete an event (soft delete)
+ * Only the event host can delete
+ */
+export const deleteEvent = async (
+  eventId: string,
+): Promise<{ message: string; event_id: string }> => {
+  const response = await httpClient.delete(`/events/${eventId}`);
   return response.data;
 };

@@ -12,8 +12,8 @@ export * from "./auth.service";
 // User Service
 export * from "./user.service";
 
-// Recipe Service
-export * from "./recipe.service";
-
 // Event Service
 export * from "./event.service";
+
+// Meal Service
+export * from "./meal.service";

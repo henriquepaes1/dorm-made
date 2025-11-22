@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getUser, updateUser, getUserEvents } from "@/services";
 import { User, Event } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/utils/error";
 
 interface UseProfileReturn {
   user: User | null;
@@ -17,6 +18,7 @@ interface UseProfileReturn {
   handleCancel: () => void;
   loadUser: (userId: string) => Promise<void>;
   isOwnProfile: () => boolean;
+  refreshUserEvents: () => Promise<void>;
 }
 
 /**
@@ -37,9 +39,8 @@ export function useProfile(userId?: string): UseProfileReturn {
       setLoadingEvents(true);
       const events = await getUserEvents(targetUserId);
       setUserEvents(events);
-    } catch (error: any) {
-      console.error("Error loading user events:", error);
-      // Don't show toast error - user might not have events
+    } catch (error) {
+      console.error("Error loading user events:", getErrorMessage(error));
       setUserEvents([]);
     } finally {
       setLoadingEvents(false);
@@ -59,11 +60,7 @@ export function useProfile(userId?: string): UseProfileReturn {
         setEditingUser({ ...userData });
         // Load events after user is loaded
         await loadUserEvents(userData.id);
-      } catch (error: any) {
-        console.error("Error loading user:", error);
-        console.error("Error response:", error.response?.data);
-        console.error("Error status:", error.response?.status);
-
+      } catch (error) {
         // Fallback to localStorage if backend fails
         const currentUserStr = localStorage.getItem("currentUser");
         if (currentUserStr) {
@@ -81,14 +78,9 @@ export function useProfile(userId?: string): UseProfileReturn {
           }
         }
 
-        const errorMessage =
-          error.response?.data?.detail ||
-          error.message ||
-          "Não foi possível carregar o perfil do usuário";
-
         toast({
           title: "Erro",
-          description: errorMessage,
+          description: getErrorMessage(error, "Não foi possível carregar o perfil do usuário"),
           variant: "destructive",
           duration: 1500,
         });
@@ -124,11 +116,10 @@ export function useProfile(userId?: string): UseProfileReturn {
           className: "bg-green-500 text-white border-green-600",
           duration: 1500,
         });
-      } catch (error: any) {
-        console.error("Error updating user:", error);
+      } catch (error) {
         toast({
           title: "Erro",
-          description: error.response?.data?.detail || "Não foi possível atualizar o perfil",
+          description: getErrorMessage(error, "Não foi possível atualizar o perfil"),
           variant: "destructive",
           duration: 1500,
         });
@@ -184,6 +175,12 @@ export function useProfile(userId?: string): UseProfileReturn {
     }
   }, [userId, loadUser, loadUserEvents]);
 
+  const refreshUserEvents = useCallback(async () => {
+    if (user?.id) {
+      await loadUserEvents(user.id);
+    }
+  }, [user?.id, loadUserEvents]);
+
   return {
     user,
     loading,
@@ -198,5 +195,6 @@ export function useProfile(userId?: string): UseProfileReturn {
     handleCancel,
     loadUser,
     isOwnProfile,
+    refreshUserEvents,
   };
 }

@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { createUser, loginUser, setAuthToken } from "@/services";
 import { useToast } from "@/hooks/use-toast";
+import { getErrorMessage } from "@/utils/error";
 
 interface SignUpFormData {
   firstName: string;
@@ -59,21 +60,10 @@ export function useAuth(): UseAuthReturn {
         });
 
         navigate("/login");
-      } catch (error: any) {
-        let errorMessage = "Failed to create account";
-
-        if (error.response?.data?.detail) {
-          // Handle Pydantic validation errors
-          if (Array.isArray(error.response.data.detail)) {
-            errorMessage = error.response.data.detail.map((err: any) => err.msg).join(", ");
-          } else {
-            errorMessage = error.response.data.detail;
-          }
-        }
-
+      } catch (error) {
         toast({
           title: "Error",
-          description: errorMessage,
+          description: getErrorMessage(error, "Failed to create account"),
           variant: "destructive",
           duration: 1500,
         });
@@ -123,21 +113,10 @@ export function useAuth(): UseAuthReturn {
         });
 
         navigate("/explore");
-      } catch (error: any) {
-        let errorMessage = "Failed to log in";
-
-        if (error.response?.data?.detail) {
-          // Handle Pydantic validation errors
-          if (Array.isArray(error.response.data.detail)) {
-            errorMessage = error.response.data.detail.map((err: any) => err.msg).join(", ");
-          } else {
-            errorMessage = error.response.data.detail;
-          }
-        }
-
+      } catch (error) {
         toast({
           title: "Error",
-          description: errorMessage,
+          description: getErrorMessage(error, "Failed to log in"),
           variant: "destructive",
           duration: 1500,
         });
