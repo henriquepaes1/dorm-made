@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, DateTime, Text
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID
 from utils.database import Base
 import uuid
 
@@ -7,7 +8,7 @@ import uuid
 class UserModel(Base):
     __tablename__ = "users"
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False, index=True)
     hashed_password = Column(String, nullable=False)
